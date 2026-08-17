@@ -1,0 +1,36 @@
+# ─── Core Framework ────────────────────────────────────────────────────────────
+fastapi==0.115.14
+uvicorn[standard]==0.35.0
+python-multipart==0.0.20
+
+# ─── Database ──────────────────────────────────────────────────────────────────
+sqlalchemy==2.0.41
+alembic==1.16.4
+psycopg2-binary==2.9.10
+asyncpg==0.30.0
+
+# ─── Settings / Environment ────────────────────────────────────────────────────
+pydantic==2.11.7
+pydantic-settings==2.9.1
+python-dotenv==1.1.1
+
+# ─── Authentication ────────────────────────────────────────────────────────────
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+
+# ─── Data Processing (for import scripts) ──────────────────────────────────────
+openpyxl==3.1.5
+pandas==2.3.1
+numpy==2.2.3
+
+# ─── Validation ────────────────────────────────────────────────────────────────
+email-validator==2.2.0
+
+# ─── Utilities ─────────────────────────────────────────────────────────────────
+python-dateutil==2.9.0.post0
+pytz==2025.2
+
+# ─── Dev / Testing ─────────────────────────────────────────────────────────────
+pytest==8.4.1
+pytest-asyncio==1.0.0
+httpx==0.28.1

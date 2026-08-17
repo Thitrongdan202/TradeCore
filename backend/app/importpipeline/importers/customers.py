@@ -1,0 +1,211 @@
+"""
+TradeCore — Customer Importer
+
+Pipeline: Read Excel/CSV → Map columns → Validate → Upsert customers table → Log import_run
+Upsert key: customers.code (KH-XXXX or any stable code)
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Set
+
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.orm import Session
+
+from app.importpipeline.mapper import ColumnMapper, CUSTOMER_COLUMN_MAP
+from app.importpipeline.reader import SourceReader
+from app.importpipeline.report import ImportReport
+from app.importpipeline.validators import (
+    DuplicateDetector, Level, RowResult, ValidationMessage,
+    validate_required, validate_string_length, validate_numeric,
+    validate_email, validate_phone,
+)
+from app.models import Customer, ImportRun, ImportRunRow, PaymentTerm
+from app.models.staging import EntityType, ImportRunStatus, RowStatus, SourceType
+
+
+def _get_existing_codes(db: Session) -> Set[str]:
+    return {r.upper() for r in db.execute(select(Customer.code)).scalars().all()}
+
+
+def _get_payment_term_map(db: Session) -> Dict[str, uuid.UUID]:
+    rows = db.execute(select(PaymentTerm.name, PaymentTerm.id)).all()
+    return {name.strip().lower(): uid for name, uid in rows}
+
+
+def _validate_row(
+    row: Dict[str, Any],
+    row_number: int,
+    existing_codes: Set[str],
+    dup_detector: DuplicateDetector,
+) -> RowResult:
+    result = RowResult(row_number=row_number, source_data=dict(row))
+
+    result.add(validate_required(row.get("code"), "code"))
+    result.add(validate_required(row.get("name"), "name"))
+    result.add(validate_string_length(row.get("name"), "name", max_len=500))
+    result.add(validate_string_length(row.get("code"), "code", min_len=2, max_len=40))
+
+    if row.get("code"):
+        result.add(dup_detector.check(row["code"], row_number))
+        code_upper = str(row["code"]).strip().upper()
+        if code_upper in existing_codes:
+            result.messages.append(ValidationMessage(
+                level=Level.INFO, code="WILL_UPDATE_EXISTING",
+                field="code",
+                message=f"Customer '{row['code']}' already exists — will update"
+            ))
+
+    result.add(validate_email(row.get("email"), "email"))
+    result.add(validate_phone(row.get("phone"), "phone"))
+
+    msgs, _ = validate_numeric(row.get("credit_limit"), "credit_limit",
+                               allow_zero=True, allow_negative=False)
+    result.add(msgs)
+
+    return result
+
+
+def import_customers(
+    db: Session,
+    file_path: str,
+    sheet_name: Optional[str] = None,
+    skip_rows: int = 0,
+    dry_run: bool = False,
+    column_map_overrides: Optional[Dict[str, str]] = None,
+) -> ImportReport:
+    """Import customers from Excel/CSV. Upserts by code."""
+    reader = SourceReader(file_path, sheet_name=sheet_name, skip_rows=skip_rows)
+    mapper = ColumnMapper(CUSTOMER_COLUMN_MAP, column_map_overrides)
+    report = ImportReport(entity_type="customer", source_file=reader.file_name)
+
+    run = ImportRun(
+        source_type=SourceType.excel,
+        entity_type=EntityType.customer,
+        source_file=file_path,
+        source_hash=reader.file_hash,
+        status=ImportRunStatus.running,
+        created_by="import_pipeline",
+    )
+    if not dry_run:
+        db.add(run)
+        db.flush()
+        report.import_run_id = str(run.id)
+
+    existing_codes = _get_existing_codes(db)
+    payment_term_map = _get_payment_term_map(db)
+    dup_detector = DuplicateDetector("code")
+
+    all_results: List[RowResult] = []
+
+    for raw_row in reader.iter_rows():
+        row_number = raw_row.get("_row_number", 0)
+        mapped = mapper.map_row(raw_row)
+        result = _validate_row(mapped, row_number, existing_codes, dup_detector)
+        result.mapped_data = {k: v for k, v in mapped.items() if not k.startswith("_")}
+        all_results.append(result)
+
+    for result in all_results:
+        if not dry_run and not result.has_errors:
+            mapped = result.mapped_data or {}
+            code = str(mapped["code"]).strip()
+
+            # Resolve payment term
+            pt_id = None
+            if mapped.get("payment_term"):
+                pt_id = payment_term_map.get(str(mapped["payment_term"]).strip().lower())
+
+            # Parse credit limit
+            credit_limit = None
+            if mapped.get("credit_limit"):
+                try:
+                    from decimal import Decimal
+                    credit_limit = float(Decimal(str(mapped["credit_limit"]).replace(",", "")))
+                except Exception:
+                    pass
+
+            stmt = pg_insert(Customer.__table__).values(
+                code=code,
+                name=str(mapped.get("name", "")).strip(),
+                short_name=mapped.get("short_name"),
+                tax_code=mapped.get("tax_code"),
+                phone=mapped.get("phone"),
+                email=str(mapped.get("email", "")).lower() if mapped.get("email") else None,
+                address=mapped.get("address"),
+                city=mapped.get("city"),
+                province=mapped.get("province"),
+                country=mapped.get("country") or "VN",
+                payment_term_id=pt_id,
+                credit_limit=credit_limit,
+                is_active=True,
+                notes=mapped.get("notes"),
+            ).on_conflict_do_update(
+                index_elements=["code"],
+                set_={
+                    "name":            Customer.__table__.c.name,
+                    "short_name":      Customer.__table__.c.short_name,
+                    "tax_code":        Customer.__table__.c.tax_code,
+                    "phone":           Customer.__table__.c.phone,
+                    "email":           Customer.__table__.c.email,
+                    "address":         Customer.__table__.c.address,
+                    "city":            Customer.__table__.c.city,
+                    "province":        Customer.__table__.c.province,
+                    "country":         Customer.__table__.c.country,
+                    "payment_term_id": Customer.__table__.c.payment_term_id,
+                    "credit_limit":    Customer.__table__.c.credit_limit,
+                },
+            ).returning(Customer.__table__.c.id)
+
+            from sqlalchemy import text as sa_text
+            stmt = pg_insert(Customer.__table__).values(
+                code=code,
+                name=str(mapped.get("name", "")).strip(),
+                short_name=mapped.get("short_name"),
+                tax_code=mapped.get("tax_code"),
+                phone=mapped.get("phone"),
+                email=str(mapped.get("email", "")).lower() if mapped.get("email") else None,
+                address=mapped.get("address"),
+                city=mapped.get("city"),
+                province=mapped.get("province"),
+                country=mapped.get("country") or "VN",
+                payment_term_id=pt_id,
+                credit_limit=credit_limit,
+                is_active=True,
+                notes=mapped.get("notes"),
+            ).on_conflict_do_update(
+                index_elements=["code"],
+                set_={c.name: sa_text(f"EXCLUDED.{c.name}") for c in Customer.__table__.c
+                      if c.name not in ("id", "code", "created_at")},
+            ).returning(Customer.__table__.c.id)
+
+            entity_id = db.execute(stmt).scalar_one()
+            result.entity_id = str(entity_id)
+
+        report.add_row(result)
+
+    if not dry_run:
+        for result in all_results:
+            rr = ImportRunRow(
+                import_run_id=run.id,
+                row_number=result.row_number,
+                status=RowStatus(result.status if result.status in ("ok", "skipped", "error", "warning") else "error"),
+                source_data=result.source_data,
+                mapped_data=result.mapped_data,
+                messages=[m.to_dict() for m in result.messages],
+                entity_id=uuid.UUID(result.entity_id) if result.entity_id else None,
+            )
+            db.add(rr)
+
+        run.total_rows = report.total_rows
+        run.imported_rows = report.imported_rows
+        run.skipped_rows = report.skipped_rows
+        run.error_rows = report.error_rows
+        run.warning_rows = report.warning_rows
+        run.status = ImportRunStatus.completed if report.error_rows == 0 else ImportRunStatus.partial
+        run.completed_at = datetime.now(timezone.utc)
+        db.flush()
+
+    report.finish()
+    return report

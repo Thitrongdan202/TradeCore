@@ -1,0 +1,461 @@
+/* ===================================================
+   TRADECORE — DASHBOARD PAGE
+   =================================================== */
+
+/* ─── KPI Row ─── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.kpi-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.kpi-card:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--color-border);
+}
+
+.kpi-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpi-card-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.kpi-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kpi-card-icon-purple {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.kpi-card-icon-green {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.kpi-card-icon-amber {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.kpi-card-icon-blue {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.kpi-card-value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: 1.1;
+}
+
+.kpi-card-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.kpi-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.kpi-trend-up {
+  color: var(--color-success-text);
+  background: var(--color-success-bg);
+}
+
+.kpi-trend-down {
+  color: var(--color-danger-text);
+  background: var(--color-danger-bg);
+}
+
+.kpi-trend-neutral {
+  color: var(--color-neutral-text);
+  background: var(--color-neutral-bg);
+}
+
+.kpi-comparison {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* ─── Two column layout ─── */
+.dashboard-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+/* ─── Full width row ─── */
+.dashboard-row {
+  margin-bottom: var(--space-5);
+}
+
+/* ─── Bottom grid (chart + alerts) ─── */
+.dashboard-grid-chart {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+/* ─── Shipment Tracker ─── */
+.shipment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.shipment-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: background var(--transition-fast);
+}
+
+.shipment-row:last-child {
+  border-bottom: none;
+}
+
+.shipment-row:hover {
+  background: var(--color-surface-raised);
+}
+
+.shipment-code {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  margin-bottom: 2px;
+}
+
+.shipment-desc {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin-bottom: 3px;
+}
+
+.shipment-route {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.shipment-route-arrow {
+  opacity: 0.4;
+}
+
+.shipment-eta-label {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wider);
+  margin-bottom: 2px;
+}
+
+.shipment-eta-value {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.shipment-containers {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.shipment-containers strong {
+  display: block;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+/* ─── Progress steps (shipment timeline) ─── */
+.shipment-progress {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: var(--space-4) var(--space-6) 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.shipment-progress::-webkit-scrollbar { display: none; }
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  min-width: 64px;
+}
+
+.progress-step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.progress-step.done .progress-step-dot {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.progress-step.current .progress-step-dot {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-dim);
+}
+
+.progress-step-label {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  white-space: nowrap;
+  letter-spacing: 0;
+}
+
+.progress-step.done .progress-step-label { color: var(--color-primary); }
+.progress-step.current .progress-step-label { color: var(--color-primary); font-weight: var(--font-weight-medium); }
+
+.progress-line {
+  flex: 1;
+  height: 2px;
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+  min-width: 16px;
+  margin-bottom: 12px;
+}
+
+.progress-line.done {
+  background: var(--color-primary);
+}
+
+/* ─── Revenue Chart ─── */
+.chart-wrapper {
+  padding: var(--space-5) var(--space-6);
+}
+
+.chart-legend {
+  display: flex;
+  gap: var(--space-5);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.chart-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ─── Stock Alerts ─── */
+.stock-alert-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.stock-alert-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: background var(--transition-fast);
+}
+
+.stock-alert-row:last-child {
+  border-bottom: none;
+}
+
+.stock-alert-row:hover {
+  background: var(--color-surface-raised);
+}
+
+.stock-alert-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.stock-alert-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stock-alert-code {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.stock-alert-qty {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.stock-alert-min {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+/* ─── Table order number ─── */
+.order-number {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-link);
+}
+
+.amount-vnd {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ─── Summary header row ─── */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.dashboard-date {
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ─── See all link ─── */
+.see-all-link {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+.see-all-link:hover {
+  opacity: 0.75;
+  text-decoration: none;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 1200px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-grid-chart {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .shipment-row {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+  }
+
+  .shipment-containers {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .kpi-card {
+    padding: var(--space-4);
+  }
+
+  .kpi-card-value {
+    font-size: var(--font-size-xl);
+  }
+
+  .shipment-progress {
+    padding: var(--space-3) var(--space-4) 0;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+}

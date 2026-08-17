@@ -1,0 +1,1 @@
+"""TradeCore FastAPI application package."""
