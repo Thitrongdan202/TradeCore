@@ -7,17 +7,34 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
+  ResponsiveContainer,
 } from 'recharts';
-import {
-  fetchKPISummary, fetchRecentSalesOrders, fetchRecentPurchaseOrders,
-  fetchActiveShipments, fetchStockAlerts, fetchRevenueChart,
-  formatVND, formatDate,
-} from '../../data/mock';
+import { api } from '../../utils/api';
 import type {
   KPISummary, SalesOrder, PurchaseOrder,
   Shipment, StockItem, RevenueDataPoint,
 } from '../../types';
+
+// Export these local helpers for formatting
+export function formatVND(amount: number, compact = false): string {
+  if (amount === undefined || amount === null) return '0đ';
+  if (compact) {
+    if (amount >= 1_000_000_000) return `${(amount / 1_000_000_000).toFixed(1).replace(/\.0$/, '')} tỷ`;
+    if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(0)} tr`;
+    return `${amount.toLocaleString('vi-VN')}đ`;
+  }
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0 }).format(amount);
+}
+
+export function formatDate(dateStr: string): string {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+  } catch (e) {
+    return dateStr;
+  }
+}
 import { OrderStatusBadge, PaymentStatusBadge, ShipmentStatusBadge, StockAlertBadge } from '../../components/Badge/Badge';
 import {
   IconTrendUp, IconTrendDown, IconCalendar, IconAlert,
@@ -130,24 +147,47 @@ export function Dashboard() {
   const [kpi, setKpi]           = useState<KPISummary | null>(null);
   const [salesOrders, setSales]  = useState<SalesOrder[]>([]);
   const [purchaseOrders, setPO]  = useState<PurchaseOrder[]>([]);
-  const [shipments, setShip]     = useState<Shipment[]>([]);
+  const [shipments]              = useState<Shipment[]>([]);
   const [stockAlerts, setStock]  = useState<StockItem[]>([]);
   const [revenueData, setRevenue] = useState<RevenueDataPoint[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    void fetchKPISummary().then(setKpi);
-    void fetchRecentSalesOrders().then(setSales);
-    void fetchRecentPurchaseOrders().then(setPO);
-    void fetchActiveShipments().then(setShip);
-    void fetchStockAlerts().then(setStock);
-    void fetchRevenueChart().then(setRevenue);
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [
+          kpiRes, revenueRes, ordersRes, lowStockRes
+        ] = await Promise.all([
+          api.get('/api/v1/dashboard/summary'),
+          api.get('/api/v1/dashboard/revenue-chart'),
+          api.get('/api/v1/dashboard/recent-orders'),
+          api.get('/api/v1/dashboard/low-stock'),
+        ]);
+
+        setKpi(kpiRes.data);
+        setRevenue(revenueRes.data);
+        setSales(ordersRes.data.sales_orders || []);
+        setPO(ordersRes.data.purchase_orders || []);
+        setStock(lowStockRes.data || []);
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
+  if (isLoading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', padding: 'var(--space-8)' }}>Đang tải dữ liệu...</div>;
+  }
+
   const revenuePct = kpi
-    ? ((kpi.revenueThisMonth - kpi.revenueLastMonth) / kpi.revenueLastMonth) * 100
+    ? ((kpi.revenueThisMonth - kpi.revenueLastMonth) / (kpi.revenueLastMonth || 1)) * 100
     : 0;
   const ordersPct = kpi
-    ? ((kpi.ordersThisMonth - kpi.ordersLastMonth) / kpi.ordersLastMonth) * 100
+    ? ((kpi.ordersThisMonth - kpi.ordersLastMonth) / (kpi.ordersLastMonth || 1)) * 100
     : 0;
 
   // Today in Vietnamese locale

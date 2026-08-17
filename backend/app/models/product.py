@@ -101,6 +101,7 @@ class Product(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     name: Mapped[str] = mapped_column(String(500), nullable=False, index=True)
     name_en: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    image_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True, comment="URL of the product image")
 
     # ── Classification ────────────────────────────────────────────────────
     product_type: Mapped[ProductType] = mapped_column(

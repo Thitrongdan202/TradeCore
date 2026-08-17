@@ -23,13 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Python cache
-__pycache__/
-*.py[cod]
-*.pyo
-
-# Python virtual environment
-backend/.venv/
-
-# JetBrains IDE
-.idea/
+# Env
+.env
+.env.local

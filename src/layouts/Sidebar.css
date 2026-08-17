@@ -249,6 +249,25 @@
   flex-shrink: 0;
 }
 
+.sidebar-logout-btn {
+  background: transparent;
+  border: none;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  padding: var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.sidebar-logout-btn:hover {
+  color: var(--color-danger);
+  background: rgba(220, 38, 38, 0.1);
+}
+
 /* ─── Mobile Overlay ─── */
 .sidebar-overlay {
   display: none;

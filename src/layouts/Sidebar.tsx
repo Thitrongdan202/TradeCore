@@ -4,6 +4,7 @@
 // ===================================================
 
 import { NavLink, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import './Sidebar.css';
 import {
   IconDashboard, IconSales, IconPurchase, IconWarehouse,
@@ -80,6 +81,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -172,11 +174,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </NavLink>
 
           <div className="sidebar-user">
-            <div className="sidebar-user-avatar">NV</div>
-            <div className="sidebar-user-info">
-              <div className="sidebar-user-name">Nguyễn Văn An</div>
-              <div className="sidebar-user-role">Quản trị viên</div>
+            <div className="sidebar-user-avatar">
+              {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'NV'}
             </div>
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">{user?.full_name || 'Đang tải...'}</div>
+              <div className="sidebar-user-role">{user?.role || '---'}</div>
+            </div>
+            <button onClick={logout} className="sidebar-logout-btn" title="Đăng xuất">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </button>
           </div>
         </div>
       </aside>

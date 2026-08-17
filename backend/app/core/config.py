@@ -21,7 +21,15 @@ class Settings(BaseSettings):
     # ── App ──────────────────────────────────────────────────────────────
     app_env: str = "development"
     app_debug: bool = True
-    app_secret_key: str = "change-me"
+
+    # Security (JWT)
+    jwt_secret: str = "super-secret-tradecore-key" # In production, set via env
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 1440  # 24 hours
+    app_secret_key: str = "change-me" # Used for older/other things, keeping to not break .env
+
+    # Database
+    postgres_user: str = "tradecore"
     app_title: str = "TradeCore API"
     app_version: str = "0.1.0"
 

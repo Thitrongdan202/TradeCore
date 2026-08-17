@@ -16,6 +16,7 @@ from .purchase import PurchaseOrder, PurchaseOrderItem
 from .shipment import Shipment, Container, ImportOrder, ExportOrder, ShipmentStatus
 from .expense import Expense, ExpenseCategory
 from .staging import ImportRun, ImportRunRow, StagingProduct
+from .audit import ActivityLog
 
 __all__ = [
     # Base
@@ -68,4 +69,5 @@ __all__ = [
     "ImportRun",
     "ImportRunRow",
     "StagingProduct",
+    "ActivityLog",
 ]

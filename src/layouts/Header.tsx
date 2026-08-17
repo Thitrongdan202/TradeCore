@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { IconBell, IconSearch, IconMenu, IconUser } from '../components/Icon/Icon';
+import { IconSearch, IconBell, IconMenu } from '../components/Icon/Icon';
 import './Header.css';
 
 interface HeaderProps {

@@ -229,6 +229,16 @@ def import_products(
 
             code = str(mapped["code"]).strip()
 
+            # Construct image_url
+            safe_code = "".join(c if c.isalnum() else "_" for c in code)
+            image_url = None
+            # Basic check if image was extracted earlier
+            img_path = Path(f"static/images/products/{safe_code}.jpg")
+            if img_path.exists():
+                image_url = f"/static/images/products/{safe_code}.jpg"
+            elif Path(f"static/images/products/{safe_code}.png").exists():
+                image_url = f"/static/images/products/{safe_code}.png"
+
             # Upsert product by code
             stmt = pg_insert(Product.__table__).values(
                 code=code,
@@ -245,6 +255,7 @@ def import_products(
                 barcode=mapped.get("barcode"),
                 is_active=True,
                 notes=mapped.get("_extra") and str(mapped.get("_extra", "")),
+                image_url=image_url,
             ).on_conflict_do_update(
                 index_elements=["code"],
                 set_={
@@ -259,6 +270,7 @@ def import_products(
                     "min_stock":       text("EXCLUDED.min_stock"),
                     "max_stock":       text("EXCLUDED.max_stock"),
                     "barcode":         text("EXCLUDED.barcode"),
+                    "image_url":       text("EXCLUDED.image_url"),
                     "updated_at":      text("now()"),
                 },
             ).returning(Product.__table__.c.id)

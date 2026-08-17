@@ -34,12 +34,13 @@ PRODUCT_COLUMN_MAP: Dict[str, List[str]] = {
         "ma_hang", "ma_hang_hoa", "ma_vat_tu", "ma_sp", "ma_san_pham",
         "product_code", "item_code", "code", "sku", "default_code",
         "ma", "item_no", "item_number", "hang_hoa", "ma_hang_hoa_vt",
+        "ma_hang_moi",
     ],
     # Name
     "name": [
         "ten_hang", "ten_hang_hoa", "ten_vat_tu", "ten_sp", "ten_san_pham",
         "product_name", "name", "description", "ten", "mo_ta",
-        "ten_hang_hoa", "product", "item_name",
+        "ten_hang_hoa", "product", "item_name", "thong_tin_san_pham",
     ],
     # English name
     "name_en": [
@@ -69,7 +70,7 @@ PRODUCT_COLUMN_MAP: Dict[str, List[str]] = {
     # List/sale price
     "list_price": [
         "gia_ban", "gia_list", "list_price", "sale_price", "unit_price",
-        "gia_niem_yet", "gia_ban_le", "price",
+        "gia_niem_yet", "gia_ban_le", "price", "gia_dai_ly_km_chua_vat",
     ],
     # Barcode
     "barcode": [

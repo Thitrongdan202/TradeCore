@@ -14,7 +14,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
-    pass
+    from .audit import ActivityLog
 
 
 class Role(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -59,6 +59,7 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     # Relationships
     role: Mapped[Optional["Role"]] = relationship("Role", back_populates="users")
+    activity_logs: Mapped[List["ActivityLog"]] = relationship("ActivityLog", back_populates="user")
 
     def __repr__(self) -> str:
         return f"<User id={self.id} email={self.email!r}>"
