@@ -14,7 +14,7 @@ from sqlalchemy import func, select, and_, or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import RoleType
-from app.api.deps import get_current_user, get_db, require_role
+from app.api.deps import get_current_user, get_db, require_permission
 from app.models.currency import Currency
 from app.models.partner import Customer
 from app.models.pricing import PriceList, PriceListItem
@@ -48,7 +48,7 @@ def list_price_lists(
     is_active: Optional[bool] = Query(None, description="Lọc theo trạng thái"),
     search: Optional[str] = Query(None, description="Tìm theo tên bảng giá"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """List price lists with customer and currency information."""
     query = select(PriceList).options(
@@ -117,7 +117,7 @@ def list_price_lists(
 def get_price_list(
     price_list_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Retrieve a single price list with all product pricing tiers."""
     pl = db.execute(
@@ -185,7 +185,7 @@ def get_price_list(
 def create_price_list(
     payload: PriceListCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Create a new price list with optional initial items."""
     if payload.customer_id:
@@ -241,7 +241,7 @@ def update_price_list(
     price_list_id: uuid.UUID,
     payload: PriceListUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update price list metadata."""
     pl = db.execute(select(PriceList).where(PriceList.id == price_list_id)).scalar_one_or_none()
@@ -290,7 +290,7 @@ def update_price_list(
 def delete_price_list(
     price_list_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Delete a price list and all its tiered items."""
     pl = db.execute(select(PriceList).where(PriceList.id == price_list_id)).scalar_one_or_none()
@@ -313,7 +313,7 @@ def delete_price_list(
 def list_price_list_items(
     price_list_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """List all item tiers in a price list."""
     items = db.execute(
@@ -354,7 +354,7 @@ def add_price_list_item(
     price_list_id: uuid.UUID,
     payload: PriceListItemCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Add a product price tier to a price list."""
     pl = db.execute(select(PriceList).where(PriceList.id == price_list_id)).scalar_one_or_none()
@@ -408,7 +408,7 @@ def update_price_list_item(
     item_id: uuid.UUID,
     payload: PriceListItemUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update a specific price list line item."""
     item = db.execute(
@@ -463,7 +463,7 @@ def update_price_list_item(
 def delete_price_list_item(
     item_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Delete a price list line item."""
     item = db.execute(select(PriceListItem).where(PriceListItem.id == item_id)).scalar_one_or_none()
@@ -488,7 +488,7 @@ def lookup_price(
     customer_id: Optional[uuid.UUID] = Query(None, description="ID khách hàng"),
     qty: float = Query(1.0, gt=0, description="Số lượng đặt mua"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """
     Lookup appropriate unit price using customer-specific price list first,

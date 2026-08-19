@@ -56,6 +56,8 @@ def health_db():
 # ─── Routers ─────────────────────────────────────────────────────────────────
 from app.api.auth import router as auth_router
 from app.api.users import router as users_router
+from app.api.account import router as account_router
+from app.api.import_data import router as import_router
 from app.api.products import router as products_router
 from app.api.partners import router as partners_router
 from app.api.inventory import router as inventory_router
@@ -63,6 +65,9 @@ from app.api.pricing import router as pricing_router
 from app.api.sales import router as sales_router
 from app.api.purchasing import router as purchasing_router
 from app.api.dashboard import router as dashboard_router
+from app.api.settings import router as settings_router
+from app.api.support import router as support_router
+from app.api.audit import router as audit_router
 
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(users_router, prefix="/api/v1/users", tags=["Users & Roles"])
@@ -73,3 +78,6 @@ app.include_router(pricing_router, prefix="/api/v1/pricing", tags=["Pricing & Pr
 app.include_router(sales_router, prefix="/api/v1/sales", tags=["Sales Orders"])
 app.include_router(purchasing_router, prefix="/api/v1/purchasing", tags=["Purchase Orders"])
 app.include_router(dashboard_router, prefix="/api/v1/dashboard", tags=["Dashboard & Analytics"])
+app.include_router(settings_router, prefix="/api/v1/settings", tags=["Company Settings"])
+app.include_router(support_router, prefix="/api/v1/support-sessions", tags=["Tech Support Sessions"])
+app.include_router(audit_router, prefix="/api/v1/audit-logs", tags=["Audit Logs"])

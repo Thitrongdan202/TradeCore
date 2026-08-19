@@ -13,7 +13,7 @@ from sqlalchemy import func, select, or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import RoleType
-from app.api.deps import get_current_user, get_db, require_role
+from app.api.deps import get_current_user, get_db, require_permission
 from app.models.inventory import StockBalance
 from app.models.product import Product, ProductCategory, ProductType
 from app.models.uom import UnitOfMeasure
@@ -45,7 +45,7 @@ router = APIRouter()
 def list_categories(
     is_active: Optional[bool] = Query(None, description="Lọc theo trạng thái hoạt động"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES, RoleType.PURCHASING, RoleType.WAREHOUSE, RoleType.IMPORT_EXPORT])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """List product categories."""
     query = select(ProductCategory).order_by(ProductCategory.name)
@@ -57,7 +57,7 @@ def list_categories(
 @router.get("/categories/tree", response_model=List[ProductCategoryTreeResponse], summary="Lấy cây danh mục sản phẩm")
 def get_categories_tree(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES, RoleType.PURCHASING, RoleType.WAREHOUSE, RoleType.IMPORT_EXPORT])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Retrieve top-level categories with nested children."""
     query = (
@@ -73,7 +73,7 @@ def get_categories_tree(
 def get_category(
     category_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES, RoleType.PURCHASING, RoleType.WAREHOUSE, RoleType.IMPORT_EXPORT])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Retrieve a single category by UUID."""
     cat = db.execute(select(ProductCategory).where(ProductCategory.id == category_id)).scalar_one_or_none()
@@ -94,7 +94,7 @@ def get_category(
 def create_category(
     payload: ProductCategoryCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Create a new product category."""
     if payload.code:
@@ -131,7 +131,7 @@ def update_category(
     category_id: uuid.UUID,
     payload: ProductCategoryUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update category properties."""
     cat = db.execute(select(ProductCategory).where(ProductCategory.id == category_id)).scalar_one_or_none()
@@ -180,7 +180,7 @@ def update_category(
 def delete_category(
     category_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Delete category if no products or subcategories belong to it."""
     cat = db.execute(select(ProductCategory).where(ProductCategory.id == category_id)).scalar_one_or_none()
@@ -211,7 +211,7 @@ def delete_category(
 def list_uoms(
     is_active: Optional[bool] = Query(None, description="Lọc theo trạng thái hoạt động"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES, RoleType.PURCHASING, RoleType.WAREHOUSE, RoleType.IMPORT_EXPORT])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """List units of measure."""
     query = select(UnitOfMeasure).order_by(UnitOfMeasure.name)
@@ -224,7 +224,7 @@ def list_uoms(
 def get_uom(
     uom_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES, RoleType.PURCHASING, RoleType.WAREHOUSE, RoleType.IMPORT_EXPORT])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Retrieve unit of measure by ID."""
     uom = db.execute(select(UnitOfMeasure).where(UnitOfMeasure.id == uom_id)).scalar_one_or_none()
@@ -245,7 +245,7 @@ def get_uom(
 def create_uom(
     payload: UnitOfMeasureCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Create a new unit of measure."""
     existing = db.execute(select(UnitOfMeasure).where(UnitOfMeasure.name == payload.name)).scalar_one_or_none()
@@ -274,7 +274,7 @@ def update_uom(
     uom_id: uuid.UUID,
     payload: UnitOfMeasureUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update unit of measure."""
     uom = db.execute(select(UnitOfMeasure).where(UnitOfMeasure.id == uom_id)).scalar_one_or_none()
@@ -313,7 +313,7 @@ def update_uom(
 def delete_uom(
     uom_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Delete a unit of measure."""
     uom = db.execute(select(UnitOfMeasure).where(UnitOfMeasure.id == uom_id)).scalar_one_or_none()
@@ -351,7 +351,7 @@ def list_products(
     is_active: Optional[bool] = Query(None, description="Lọc theo trạng thái hoạt động"),
     low_stock_only: bool = Query(False, description="Chỉ lấy sản phẩm tồn kho dưới mức tối thiểu"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES, RoleType.PURCHASING, RoleType.WAREHOUSE, RoleType.IMPORT_EXPORT])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """List products with filters, category/uom details, and current on-hand stock."""
     query = (
@@ -455,7 +455,7 @@ def list_products(
 def get_product(
     product_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES, RoleType.PURCHASING, RoleType.WAREHOUSE, RoleType.IMPORT_EXPORT])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Retrieve product details by UUID."""
     product = db.execute(
@@ -511,7 +511,7 @@ def get_product(
 def create_product(
     payload: ProductCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Create a new product record."""
     # Check code uniqueness
@@ -578,7 +578,7 @@ def update_product(
     product_id: uuid.UUID,
     payload: ProductUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update product information."""
     product = db.execute(select(Product).where(Product.id == product_id)).scalar_one_or_none()
@@ -639,7 +639,7 @@ def update_product(
 def delete_product(
     product_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Delete a product or deactivate if it has history."""
     product = db.execute(select(Product).where(Product.id == product_id)).scalar_one_or_none()

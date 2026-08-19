@@ -57,15 +57,32 @@ def get_current_user(
     return user
 
 
-def require_role(allowed_roles: list[str]):
+from app.models.user import UserRole, RolePermission, Permission, Role
+
+def get_user_permissions(db: Session, user_id: str) -> set[tuple[str, str]]:
+    """Get all (resource, action) permissions for a user based on their active roles."""
+    perms = db.execute(
+        select(Permission.resource, Permission.action)
+        .join(RolePermission, RolePermission.permission_id == Permission.id)
+        .join(Role, Role.id == RolePermission.role_id)
+        .join(UserRole, UserRole.role_id == Role.id)
+        .where(UserRole.user_id == user_id, Role.is_active == True)
+    ).all()
+    return {(p.resource, p.action) for p in perms}
+
+def require_permission(resource: str, action: str):
     """
-    Dependency factory to check if the current user has a specific role name.
+    Dependency factory to check if the current user has a specific permission.
     """
-    def role_checker(current_user: User = Depends(get_current_user)):
-        if not current_user.role or current_user.role.name not in allowed_roles:
+    def permission_checker(
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)
+    ):
+        perms = get_user_permissions(db, str(current_user.id))
+        if (resource, action) not in perms:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Bạn không có quyền thực hiện thao tác này"
+                detail=f"Bạn không có quyền thực hiện thao tác này (yêu cầu: {action} trên {resource})"
             )
         return current_user
-    return role_checker
+    return permission_checker

@@ -13,7 +13,7 @@ from sqlalchemy import func, select, or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import RoleType
-from app.api.deps import get_current_user, get_db, require_role
+from app.api.deps import get_current_user, get_db, require_permission
 from app.models.partner import Customer, PaymentTerm, Supplier
 from app.models.sales import SalesOrder
 from app.models.purchase import PurchaseOrder
@@ -44,7 +44,7 @@ router = APIRouter()
 def list_payment_terms(
     is_active: Optional[bool] = Query(None, description="Lọc theo trạng thái hoạt động"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES, RoleType.PURCHASING, RoleType.WAREHOUSE, RoleType.IMPORT_EXPORT])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Retrieve all payment terms."""
     query = select(PaymentTerm).order_by(PaymentTerm.name)
@@ -57,7 +57,7 @@ def list_payment_terms(
 def get_payment_term(
     term_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES, RoleType.PURCHASING, RoleType.WAREHOUSE, RoleType.IMPORT_EXPORT])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Get single payment term by UUID."""
     term = db.execute(select(PaymentTerm).where(PaymentTerm.id == term_id)).scalar_one_or_none()
@@ -78,7 +78,7 @@ def get_payment_term(
 def create_payment_term(
     payload: PaymentTermCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Create a new payment term."""
     existing = db.execute(select(PaymentTerm).where(PaymentTerm.name == payload.name.strip())).scalar_one_or_none()
@@ -106,7 +106,7 @@ def update_payment_term(
     term_id: uuid.UUID,
     payload: PaymentTermUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update payment term."""
     term = db.execute(select(PaymentTerm).where(PaymentTerm.id == term_id)).scalar_one_or_none()
@@ -145,7 +145,7 @@ def update_payment_term(
 def delete_payment_term(
     term_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Delete payment term if not in use."""
     term = db.execute(select(PaymentTerm).where(PaymentTerm.id == term_id)).scalar_one_or_none()
@@ -181,7 +181,7 @@ def list_customers(
     is_active: Optional[bool] = Query(None, description="Lọc theo trạng thái hoạt động"),
     province: Optional[str] = Query(None, description="Lọc theo tỉnh/thành phố"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES, RoleType.PURCHASING, RoleType.WAREHOUSE, RoleType.IMPORT_EXPORT])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """List customers with search, province filter, and pagination."""
     query = select(Customer).options(selectinload(Customer.payment_term))
@@ -227,7 +227,7 @@ def list_customers(
 def get_customer(
     customer_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES, RoleType.PURCHASING, RoleType.WAREHOUSE, RoleType.IMPORT_EXPORT])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Retrieve customer details with payment term."""
     customer = db.execute(
@@ -250,7 +250,7 @@ def get_customer(
 def create_customer(
     payload: CustomerCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Create a new customer."""
     existing = db.execute(select(Customer).where(Customer.code == payload.code.strip())).scalar_one_or_none()
@@ -295,7 +295,7 @@ def update_customer(
     customer_id: uuid.UUID,
     payload: CustomerUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update customer details."""
     customer = db.execute(select(Customer).where(Customer.id == customer_id)).scalar_one_or_none()
@@ -359,7 +359,7 @@ def update_customer(
 def delete_customer(
     customer_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Delete a customer or deactivate if orders exist."""
     customer = db.execute(select(Customer).where(Customer.id == customer_id)).scalar_one_or_none()
@@ -397,7 +397,7 @@ def list_suppliers(
     country: Optional[str] = Query(None, description="Lọc theo quốc gia (VN, CN, KR, TW, v.v.)"),
     is_active: Optional[bool] = Query(None, description="Lọc theo trạng thái hoạt động"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES, RoleType.PURCHASING, RoleType.WAREHOUSE, RoleType.IMPORT_EXPORT])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """List suppliers with search, country filter, and pagination."""
     query = select(Supplier).options(selectinload(Supplier.payment_term))
@@ -444,7 +444,7 @@ def list_suppliers(
 def get_supplier(
     supplier_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES, RoleType.PURCHASING, RoleType.WAREHOUSE, RoleType.IMPORT_EXPORT])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Retrieve supplier details by UUID."""
     supplier = db.execute(
@@ -467,7 +467,7 @@ def get_supplier(
 def create_supplier(
     payload: SupplierCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Create a new supplier."""
     existing = db.execute(select(Supplier).where(Supplier.code == payload.code.strip())).scalar_one_or_none()
@@ -510,7 +510,7 @@ def update_supplier(
     supplier_id: uuid.UUID,
     payload: SupplierUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update supplier details."""
     supplier = db.execute(select(Supplier).where(Supplier.id == supplier_id)).scalar_one_or_none()
@@ -570,7 +570,7 @@ def update_supplier(
 def delete_supplier(
     supplier_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Delete a supplier or deactivate if purchase orders exist."""
     supplier = db.execute(select(Supplier).where(Supplier.id == supplier_id)).scalar_one_or_none()

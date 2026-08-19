@@ -1,6 +1,6 @@
 """
 TradeCore — User & Role Pydantic Schemas
-Validation and serialization for authentication, users, and RBAC roles.
+Validation and serialization for authentication, users, and Dynamic RBAC.
 """
 from __future__ import annotations
 
@@ -10,32 +10,47 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
+# ─── Permission Schemas ──────────────────────────────────────────────────────
+
+class PermissionBase(BaseModel):
+    resource: str
+    action: str
+    name: str
+    description: Optional[str] = None
+
+class PermissionResponse(PermissionBase):
+    id: uuid.UUID
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # ─── Role Schemas ────────────────────────────────────────────────────────────
 
 class RoleBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=80, description="Role identifier, e.g. admin, sales")
-    description: Optional[str] = Field(None, description="Human readable description")
-    permissions: Optional[Dict[str, Any] | List[str]] = Field(
-        None, description="Array or object defining granted permissions"
-    )
-
+    name: str = Field(..., min_length=1, max_length=100)
+    code: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = None
+    is_active: bool = True
 
 class RoleCreate(RoleBase):
-    pass
-
+    permission_ids: List[uuid.UUID] = Field(default_factory=list)
 
 class RoleUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=80)
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
     description: Optional[str] = None
-    permissions: Optional[Dict[str, Any] | List[str]] = None
-
+    is_active: Optional[bool] = None
+    permission_ids: Optional[List[uuid.UUID]] = None
 
 class RoleResponse(RoleBase):
     id: uuid.UUID
+    is_system: bool
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class RoleWithPermissionsResponse(RoleResponse):
+    permissions: List[PermissionResponse] = []
 
 
 # ─── User Schemas ────────────────────────────────────────────────────────────
@@ -45,21 +60,18 @@ class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=80)
     full_name: str = Field(..., min_length=1, max_length=255)
     is_active: bool = True
-    role_id: Optional[uuid.UUID] = None
-
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=6, description="Plain text password to be hashed")
-
+    password: str = Field(..., min_length=6)
+    role_ids: List[uuid.UUID] = Field(default_factory=list)
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     username: Optional[str] = Field(None, min_length=3, max_length=80)
     full_name: Optional[str] = Field(None, min_length=1, max_length=255)
     is_active: Optional[bool] = None
-    role_id: Optional[uuid.UUID] = None
-    password: Optional[str] = Field(None, min_length=6, description="Optional new password")
-
+    password: Optional[str] = Field(None, min_length=6)
+    role_ids: Optional[List[uuid.UUID]] = None
 
 class UserResponse(UserBase):
     id: uuid.UUID
@@ -68,6 +80,5 @@ class UserResponse(UserBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-
-class UserWithRoleResponse(UserResponse):
-    role: Optional[RoleResponse] = None
+class UserWithRolesResponse(UserResponse):
+    roles: List[RoleResponse] = []

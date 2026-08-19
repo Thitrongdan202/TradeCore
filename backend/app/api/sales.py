@@ -14,7 +14,7 @@ from sqlalchemy import func, select, or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import RoleType
-from app.api.deps import get_current_user, get_db, require_role
+from app.api.deps import get_current_user, get_db, require_permission
 from app.models.currency import Currency
 from app.models.partner import Customer, PaymentTerm
 from app.models.product import Product
@@ -76,7 +76,7 @@ def list_sales_orders(
     to_date: Optional[date] = Query(None, description="Đến ngày"),
     search: Optional[str] = Query(None, description="Tìm theo mã đơn hoặc tên khách hàng"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """List sales orders with filters and pagination."""
     query = (
@@ -158,7 +158,7 @@ def list_sales_orders(
 def get_sales_order(
     order_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Retrieve full sales order details with items and customer info."""
     order = db.execute(
@@ -234,7 +234,7 @@ def get_sales_order(
 def create_sales_order(
     payload: SalesOrderCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Create a new sales order with calculated line totals."""
     order_number = payload.order_number.strip() if payload.order_number else generate_so_number(db)
@@ -308,7 +308,7 @@ def update_sales_order(
     order_id: uuid.UUID,
     payload: SalesOrderUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update sales order details and optionally replace items."""
     order = db.execute(select(SalesOrder).where(SalesOrder.id == order_id)).scalar_one_or_none()
@@ -376,7 +376,7 @@ def update_order_status(
     order_id: uuid.UUID,
     payload: SalesOrderStatusUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update lifecycle status of a sales order."""
     order = db.execute(select(SalesOrder).where(SalesOrder.id == order_id)).scalar_one_or_none()
@@ -400,7 +400,7 @@ def update_order_payment(
     order_id: uuid.UUID,
     payload: SalesOrderPaymentUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update payment status and amount paid."""
     order = db.execute(select(SalesOrder).where(SalesOrder.id == order_id)).scalar_one_or_none()
@@ -423,7 +423,7 @@ def update_order_payment(
 def delete_sales_order(
     order_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.SALES])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Cancel or delete sales order."""
     order = db.execute(select(SalesOrder).where(SalesOrder.id == order_id)).scalar_one_or_none()

@@ -14,7 +14,7 @@ from sqlalchemy import func, select, or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import RoleType
-from app.api.deps import get_current_user, get_db, require_role
+from app.api.deps import get_current_user, get_db, require_permission
 from app.models.inventory import MovementType, ReferenceType, StockBalance, StockMovement
 from app.models.product import Product
 from app.models.user import User
@@ -48,7 +48,7 @@ router = APIRouter()
 def list_warehouses(
     is_active: Optional[bool] = Query(None, description="Lọc theo trạng thái hoạt động"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """List all physical warehouses."""
     query = select(Warehouse).order_by(Warehouse.code)
@@ -61,7 +61,7 @@ def list_warehouses(
 def get_warehouse(
     warehouse_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Retrieve warehouse with its internal locations."""
     wh = db.execute(
@@ -84,7 +84,7 @@ def get_warehouse(
 def create_warehouse(
     payload: WarehouseCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Create a new physical warehouse and auto-create default Stock internal location."""
     existing = db.execute(select(Warehouse).where(Warehouse.code == payload.code.strip())).scalar_one_or_none()
@@ -123,7 +123,7 @@ def update_warehouse(
     warehouse_id: uuid.UUID,
     payload: WarehouseUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update warehouse details."""
     wh = db.execute(select(Warehouse).where(Warehouse.id == warehouse_id)).scalar_one_or_none()
@@ -160,7 +160,7 @@ def update_warehouse(
 def delete_warehouse(
     warehouse_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Delete warehouse if no stock exists in its locations."""
     wh = db.execute(select(Warehouse).where(Warehouse.id == warehouse_id)).scalar_one_or_none()
@@ -197,7 +197,7 @@ def list_locations(
     location_type: Optional[LocationTypeEnum] = Query(None, description="Lọc theo loại vị trí"),
     is_active: Optional[bool] = Query(None, description="Lọc theo trạng thái"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """List warehouse locations."""
     query = select(WarehouseLocation).order_by(WarehouseLocation.code)
@@ -216,7 +216,7 @@ def list_locations(
 def get_location(
     location_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Retrieve warehouse location details."""
     loc = db.execute(select(WarehouseLocation).where(WarehouseLocation.id == location_id)).scalar_one_or_none()
@@ -237,7 +237,7 @@ def get_location(
 def create_location(
     payload: WarehouseLocationCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Create a new location inside a warehouse or virtual location."""
     existing = db.execute(select(WarehouseLocation).where(WarehouseLocation.code == payload.code.strip())).scalar_one_or_none()
@@ -274,7 +274,7 @@ def update_location(
     location_id: uuid.UUID,
     payload: WarehouseLocationUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update location details."""
     loc = db.execute(select(WarehouseLocation).where(WarehouseLocation.id == location_id)).scalar_one_or_none()
@@ -315,7 +315,7 @@ def update_location(
 def delete_location(
     location_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Delete a location if it has no stock balance."""
     loc = db.execute(select(WarehouseLocation).where(WarehouseLocation.id == location_id)).scalar_one_or_none()
@@ -354,7 +354,7 @@ def list_stock_balances(
     search: Optional[str] = Query(None, description="Tìm theo mã hoặc tên sản phẩm"),
     positive_only: bool = Query(True, description="Chỉ hiển thị tồn kho > 0"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """List stock balances across locations with product and warehouse names."""
     query = (
@@ -423,7 +423,7 @@ def list_stock_balances(
 def get_product_stock_balance(
     product_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Retrieve stock balances for a specific product across all locations."""
     rows = db.execute(
@@ -473,7 +473,7 @@ def list_stock_movements(
     from_date: Optional[datetime] = Query(None, description="Từ ngày"),
     to_date: Optional[datetime] = Query(None, description="Đến ngày"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """List immutable stock movements history."""
     query = (
@@ -563,7 +563,7 @@ def list_stock_movements(
 def create_stock_movement(
     payload: StockMovementCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """
     Execute an atomic stock movement and update materialized StockBalance.
@@ -696,7 +696,7 @@ def create_stock_movement(
 def adjust_inventory(
     payload: StockAdjustmentCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Adjust physical stock quantity to match counted stock."""
     product = db.execute(select(Product).where(Product.id == payload.product_id)).scalar_one_or_none()

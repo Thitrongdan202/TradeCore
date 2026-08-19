@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     default_page_size: int = 50
     max_page_size: int = 500
 
+    # ── Storage ──────────────────────────────────────────────────────────
+    tradecore_storage_path: str = "C:/Users/thitr/.gemini/antigravity/scratch/tradecore/storage"
+
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"

@@ -11,6 +11,19 @@ import { Login } from './pages/Auth/Login';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 
+import { SettingsLayout } from './pages/Settings/SettingsLayout';
+import { CompanySettings } from './pages/Settings/CompanySettings';
+import { UsersSettings } from './pages/Settings/UsersSettings';
+import { RolesSettings } from './pages/Settings/RolesSettings';
+import { PermissionsSettings } from './pages/Settings/PermissionsSettings';
+import { AuditLogSettings } from './pages/Settings/AuditLogSettings';
+import { SupportSessionsSettings } from './pages/Settings/SupportSessionsSettings';
+import { ImportSettings } from './pages/Settings/ImportSettings';
+
+import { AccountLayout } from './pages/Account/AccountLayout';
+import { Profile } from './pages/Account/Profile';
+import { ChangePassword } from './pages/Account/ChangePassword';
+
 export function App() {
   return (
     <AuthProvider>
@@ -50,8 +63,23 @@ export function App() {
 
               {/* Others */}
               <Route path="bao-cao" element={<PlaceholderPage />} />
-              <Route path="cai-dat" element={<PlaceholderPage />} />
-              <Route path="tai-khoan" element={<PlaceholderPage />} />
+              
+              {/* Cài đặt */}
+              <Route path="cai-dat" element={<SettingsLayout />}>
+                <Route path="thong-tin-cong-ty" element={<CompanySettings />} />
+                <Route path="nguoi-dung" element={<UsersSettings />} />
+                <Route path="vai-tro" element={<RolesSettings />} />
+                <Route path="phan-quyen" element={<PermissionsSettings />} />
+                <Route path="nhap-du-lieu" element={<ImportSettings />} />
+                <Route path="nhat-ky" element={<AuditLogSettings />} />
+                <Route path="ho-tro" element={<SupportSessionsSettings />} />
+              </Route>
+              
+              {/* Tài khoản */}
+              <Route path="tai-khoan" element={<AccountLayout />}>
+                <Route index element={<Profile />} />
+                <Route path="doi-mat-khau" element={<ChangePassword />} />
+              </Route>
 
               {/* 404 */}
               <Route path="*" element={<PlaceholderPage />} />

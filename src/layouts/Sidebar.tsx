@@ -164,14 +164,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Footer */}
         <div className="sidebar-footer">
-          <NavLink
-            to="/cai-dat"
-            className={`sidebar-item ${isActive('/cai-dat') ? 'active' : ''}`}
-            onClick={onClose}
-          >
-            <span className="sidebar-item-icon"><IconSettings size={15} /></span>
-            Cài đặt
-          </NavLink>
+          {user?.permissions?.some(p => ['company_setting:view', 'user:view', 'role:view', 'permission:view', 'audit_log:view', 'tech_support:view'].includes(p)) && (
+            <NavLink
+              to="/cai-dat"
+              className={`sidebar-item ${isActive('/cai-dat') ? 'active' : ''}`}
+              onClick={onClose}
+            >
+              <span className="sidebar-item-icon"><IconSettings size={15} /></span>
+              Cài đặt
+            </NavLink>
+          )}
 
           <div className="sidebar-user">
             <div className="sidebar-user-avatar">
@@ -179,7 +181,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
             <div className="sidebar-user-info">
               <div className="sidebar-user-name">{user?.full_name || 'Đang tải...'}</div>
-              <div className="sidebar-user-role">{user?.role || '---'}</div>
+              <div className="sidebar-user-role">{user?.roles?.join(', ') || '---'}</div>
             </div>
             <button onClick={logout} className="sidebar-logout-btn" title="Đăng xuất">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

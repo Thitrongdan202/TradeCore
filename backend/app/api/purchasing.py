@@ -14,7 +14,7 @@ from sqlalchemy import func, select, or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import RoleType
-from app.api.deps import get_current_user, get_db, require_role
+from app.api.deps import get_current_user, get_db, require_permission
 from app.models.currency import Currency
 from app.models.inventory import MovementType, ReferenceType, StockBalance, StockMovement
 from app.models.partner import PaymentTerm, Supplier
@@ -79,7 +79,7 @@ def list_purchase_orders(
     to_date: Optional[date] = Query(None, description="Đến ngày"),
     search: Optional[str] = Query(None, description="Tìm theo mã đơn hoặc tên nhà cung cấp"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.PURCHASING])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """List purchase orders with filters and pagination."""
     query = (
@@ -161,7 +161,7 @@ def list_purchase_orders(
 def get_purchase_order(
     order_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.PURCHASING])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Retrieve full purchase order details with items and supplier info."""
     order = db.execute(
@@ -238,7 +238,7 @@ def get_purchase_order(
 def create_purchase_order(
     payload: PurchaseOrderCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.PURCHASING])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Create a new purchase order with calculated line totals."""
     order_number = payload.order_number.strip() if payload.order_number else generate_po_number(db)
@@ -311,7 +311,7 @@ def update_purchase_order(
     order_id: uuid.UUID,
     payload: PurchaseOrderUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.PURCHASING])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update purchase order details and optionally line items."""
     order = db.execute(select(PurchaseOrder).where(PurchaseOrder.id == order_id)).scalar_one_or_none()
@@ -379,7 +379,7 @@ def update_purchase_order_status(
     order_id: uuid.UUID,
     payload: PurchaseOrderStatusUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.PURCHASING])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update lifecycle status of a purchase order."""
     order = db.execute(select(PurchaseOrder).where(PurchaseOrder.id == order_id)).scalar_one_or_none()
@@ -403,7 +403,7 @@ def update_purchase_order_payment(
     order_id: uuid.UUID,
     payload: PurchaseOrderPaymentUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.PURCHASING])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Update payment status and amount paid for a purchase order."""
     order = db.execute(select(PurchaseOrder).where(PurchaseOrder.id == order_id)).scalar_one_or_none()
@@ -427,7 +427,7 @@ def receive_purchase_order_goods(
     order_id: uuid.UUID,
     payload: PurchaseOrderReceiveRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.PURCHASING])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """
     Receive goods for purchase order lines into target warehouse location.
@@ -525,7 +525,7 @@ def receive_purchase_order_goods(
 def delete_purchase_order(
     order_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([RoleType.ADMIN, RoleType.MANAGER, RoleType.PURCHASING])),
+    current_user: User = Depends(require_permission("overview", "view")),
 ):
     """Cancel or delete purchase order."""
     order = db.execute(select(PurchaseOrder).where(PurchaseOrder.id == order_id)).scalar_one_or_none()

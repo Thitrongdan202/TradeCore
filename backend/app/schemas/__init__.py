@@ -5,7 +5,7 @@ Exports all schemas for API request validation and response serialization.
 from .common import MessageResponse, PaginatedResponse
 from .user import (
     RoleBase, RoleCreate, RoleUpdate, RoleResponse,
-    UserBase, UserCreate, UserUpdate, UserResponse, UserWithRoleResponse,
+    UserBase, UserCreate, UserUpdate, UserResponse, UserWithRolesResponse,
 )
 from .product import (
     ProductTypeEnum, UoMCategoryEnum, UoMTypeEnum,

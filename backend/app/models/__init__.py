@@ -3,7 +3,8 @@ TradeCore — Models Package
 Exports all models so Alembic can discover them via Base.metadata.
 """
 from .base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-from .user import User, Role
+from .user import User, Role, Permission, RolePermission, UserRole, SupportSession, PasswordReset
+from .company import CompanySettings
 from .currency import Currency
 from .uom import UnitOfMeasure, UoMCategory, UoMType
 from .product import Product, ProductCategory, ProductType
@@ -23,9 +24,16 @@ __all__ = [
     "Base",
     "TimestampMixin",
     "UUIDPrimaryKeyMixin",
-    # User / Auth
+    # User / Auth / Security
     "User",
     "Role",
+    "Permission",
+    "RolePermission",
+    "UserRole",
+    "SupportSession",
+    "PasswordReset",
+    # Settings
+    "CompanySettings",
     # Reference data
     "Currency",
     "UnitOfMeasure",
