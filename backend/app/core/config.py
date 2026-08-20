@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440  # 24 hours
     app_secret_key: str = "change-me" # Used for older/other things, keeping to not break .env
+    
+    # Password Encryption
+    tradecore_password_encryption_key: str = "" # MUST be 32 url-safe base64-encoded bytes for Fernet
 
     # Database
     postgres_user: str = "tradecore"

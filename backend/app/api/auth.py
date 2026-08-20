@@ -54,7 +54,11 @@ def login_access_token(
         )
     ).scalar_one_or_none()
     
+<<<<<<< Updated upstream
     if not user or not verify_password(form_data.password, user.hashed_password):
+=======
+    if not user or not verify_password(form_data.password, user.encrypted_password):
+>>>>>>> Stashed changes
         log_activity(db, "login_failed", details={"username": form_data.username}, request=request)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -151,7 +155,11 @@ def reset_password(payload: PasswordResetRequest, request: Request, db: Session 
         raise HTTPException(status_code=400, detail="Mã khôi phục không hợp lệ hoặc đã hết hạn")
         
     user = db.execute(select(User).where(User.id == target_reset.user_id)).scalar_one()
+<<<<<<< Updated upstream
     user.hashed_password = get_password_hash(payload.new_password)
+=======
+    user.encrypted_password = get_password_hash(payload.new_password)
+>>>>>>> Stashed changes
     target_reset.is_used = True
     
     log_activity(db, "password_reset_completed", user_id=user.id, request=request)

@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../utils/api';
+<<<<<<< Updated upstream
 
 export function UsersSettings() {
+=======
+import { useAuth } from '../../contexts/AuthContext';
+
+export function UsersSettings() {
+  const { user: currentUser } = useAuth();
+>>>>>>> Stashed changes
   const [users, setUsers] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -9,6 +16,18 @@ export function UsersSettings() {
   const [effectivePerms, setEffectivePerms] = useState<any[] | null>(null);
   const [viewingUser, setViewingUser] = useState<string | null>(null);
   
+<<<<<<< Updated upstream
+=======
+  // Password viewing state
+  const [revealedPasswords, setRevealedPasswords] = useState<Record<string, string>>({});
+  
+  // Form eye icon state
+  const [showPassword, setShowPassword] = useState(false);
+  
+  // Check if current user has password_view permission
+  const canViewPassword = currentUser?.permissions?.includes('user:password_view');
+
+>>>>>>> Stashed changes
   // New user form state
   const [formData, setFormData] = useState({
     username: '', full_name: '', email: '', password: '', confirm_password: '', role_ids: [] as string[], is_active: true
@@ -78,6 +97,38 @@ export function UsersSettings() {
     }
   };
 
+<<<<<<< Updated upstream
+=======
+  const handleViewPassword = async (user: any) => {
+    if (revealedPasswords[user.id]) {
+      setRevealedPasswords(prev => {
+        const next = { ...prev };
+        delete next[user.id];
+        return next;
+      });
+      return;
+    }
+
+    try {
+      const res = await api.get(`/api/v1/users/${user.id}/password`);
+      const pwd = res.data.password;
+      setRevealedPasswords(prev => ({ ...prev, [user.id]: pwd }));
+      
+      // Auto-hide after 10 seconds
+      setTimeout(() => {
+        setRevealedPasswords(prev => {
+          const next = { ...prev };
+          delete next[user.id];
+          return next;
+        });
+      }, 10000);
+      
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Không thể xem mật khẩu');
+    }
+  };
+
+>>>>>>> Stashed changes
   if (loading) return <div>Đang tải...</div>;
 
   return (
@@ -109,12 +160,26 @@ export function UsersSettings() {
               <input className="input" type="text" placeholder="Tùy chọn" />
             </div>
             <div className="form-group">
+<<<<<<< Updated upstream
               <label>Mật khẩu khởi tạo</label>
               <input className="input" type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required minLength={6} />
             </div>
             <div className="form-group">
               <label>Xác nhận mật khẩu</label>
               <input className="input" type="password" value={formData.confirm_password} onChange={e => setFormData({...formData, confirm_password: e.target.value})} required minLength={6} />
+=======
+              <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                Mật khẩu khởi tạo
+                <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '12px' }}>
+                  {showPassword ? 'Ẩn mật khẩu' : 'Xem mật khẩu'}
+                </button>
+              </label>
+              <input className="input" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required minLength={6} />
+            </div>
+            <div className="form-group">
+              <label>Xác nhận mật khẩu</label>
+              <input className="input" type={showPassword ? 'text' : 'password'} value={formData.confirm_password} onChange={e => setFormData({...formData, confirm_password: e.target.value})} required minLength={6} />
+>>>>>>> Stashed changes
             </div>
           </div>
           <div className="form-group">
@@ -163,7 +228,21 @@ export function UsersSettings() {
                       <button className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '12px', color: u.is_active ? 'red' : 'green', borderColor: u.is_active ? 'red' : 'green' }} onClick={() => toggleStatus(u)}>
                         {u.is_active ? 'Khóa' : 'Mở khóa'}
                       </button>
+<<<<<<< Updated upstream
                     </div>
+=======
+                      {canViewPassword && (
+                        <button className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleViewPassword(u)}>
+                          {revealedPasswords[u.id] ? 'Ẩn mật khẩu' : 'Xem mật khẩu'}
+                        </button>
+                      )}
+                    </div>
+                    {revealedPasswords[u.id] && (
+                       <div style={{ marginTop: '0.5rem', background: '#fff9c4', padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid #fbc02d', display: 'inline-block' }}>
+                          Mật khẩu: <strong>{revealedPasswords[u.id]}</strong>
+                       </div>
+                    )}
+>>>>>>> Stashed changes
                   </td>
                 </tr>
                 {viewingUser === u.id && effectivePerms && (

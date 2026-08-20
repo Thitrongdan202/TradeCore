@@ -43,13 +43,21 @@ def change_own_password(
     db: Session = Depends(get_db),
 ):
     """Change the authenticated user's password."""
+<<<<<<< Updated upstream
     if not verify_password(payload.current_password, current_user.hashed_password):
+=======
+    if not verify_password(payload.current_password, current_user.encrypted_password):
+>>>>>>> Stashed changes
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Mật khẩu hiện tại không chính xác"
         )
         
+<<<<<<< Updated upstream
     current_user.hashed_password = get_password_hash(payload.new_password)
+=======
+    current_user.encrypted_password = get_password_hash(payload.new_password)
+>>>>>>> Stashed changes
     db.commit()
     
     log_activity(db, "password_changed", user_id=current_user.id, entity_id=str(current_user.id), request=request)

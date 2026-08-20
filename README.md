@@ -1,22 +1,27 @@
-# TradeCore
+# React + TypeScript + Vite
 
+<<<<<<< Updated upstream
 Hệ thống quản lý bán hàng, mua hàng, kho và xuất nhập khẩu cho doanh nghiệp.
+=======
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+>>>>>>> Stashed changes
 
-## Công nghệ
+Currently, two official plugins are available:
 
-- Frontend: React + TypeScript + Vite
-- Backend: Python + FastAPI + Uvicorn
-- ORM: SQLAlchemy
-- Migration: Alembic
-- Database: PostgreSQL 16
-- Container: Docker Compose
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
----
+## React Compiler
 
+<<<<<<< Updated upstream
 # 1. Yêu cầu môi trường
+=======
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+>>>>>>> Stashed changes
 
-Cài sẵn:
+## Expanding the Oxlint configuration
 
+<<<<<<< Updated upstream
 - Python 3.13
 - Node.js
 - npm
@@ -680,3 +685,22 @@ Các nghiệp vụ đang tiếp tục phát triển:
 - Lô hàng
 - Container
 - Báo cáo
+=======
+If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+
+```json
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
+```
+
+See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+>>>>>>> Stashed changes

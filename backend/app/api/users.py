@@ -14,7 +14,11 @@ from sqlalchemy import func, select, or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_current_user, get_db, require_permission
+<<<<<<< Updated upstream
 from app.core.security import get_password_hash
+=======
+from app.core.security import get_password_hash, decrypt_password
+>>>>>>> Stashed changes
 from app.models.user import Role, User, Permission, RolePermission, UserRole
 from app.schemas.common import MessageResponse, PaginatedResponse
 from app.schemas.user import (
@@ -302,7 +306,7 @@ def create_user(
     user = User(
         email=payload.email,
         username=payload.username,
-        hashed_password=get_password_hash(payload.password),
+        encrypted_password=get_password_hash(payload.password),
         full_name=payload.full_name,
         is_active=payload.is_active,
     )
@@ -393,7 +397,7 @@ def update_user(
                 db.add(UserRole(user_id=user.id, role_id=rid))
 
     if payload.password:
-        user.hashed_password = get_password_hash(payload.password)
+        user.encrypted_password = get_password_hash(payload.password)
 
     db.commit()
     log_activity(db, "user_created", user_id=current_user.id, entity_id=str(user.id), request=request)
@@ -454,7 +458,11 @@ def admin_reset_password(
     if not user:
         raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
 
+<<<<<<< Updated upstream
     user.hashed_password = get_password_hash(payload.new_password)
+=======
+    user.encrypted_password = get_password_hash(payload.new_password)
+>>>>>>> Stashed changes
     db.commit()
     log_activity(db, "admin_password_reset", user_id=current_user.id, entity_id=str(user.id), request=request, details={"target_username": user.username})
     return MessageResponse(message=f"Đã đặt lại mật khẩu cho '{user.username}'")
@@ -483,3 +491,27 @@ def get_user_effective_permissions(
             unique_perms.append(p)
             
     return unique_perms
+<<<<<<< Updated upstream
+=======
+
+
+@router.get("/{user_id}/password", summary="Xem mật khẩu người dùng (dành cho Admin)")
+def view_user_password(
+    user_id: uuid.UUID,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("user", "password_view")),
+):
+    """Return the plaintext password for a user. Only allowed for admins with specific permission."""
+    user = db.execute(select(User).where(User.id == user_id)).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
+
+    plain_pass = decrypt_password(user.encrypted_password)
+    if not plain_pass:
+        raise HTTPException(status_code=400, detail="Không thể giải mã mật khẩu (có thể là mật khẩu cũ)")
+
+    log_activity(db, "password_viewed", user_id=current_user.id, entity_id=str(user.id), request=request, details={"target_username": user.username})
+    
+    return {"password": plain_pass}
+>>>>>>> Stashed changes

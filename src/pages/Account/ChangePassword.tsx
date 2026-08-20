@@ -5,6 +5,10 @@ export function ChangePassword() {
   const [formData, setFormData] = useState({ current_password: '', new_password: '', confirm_password: '' });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+<<<<<<< Updated upstream
+=======
+  const [showPassword, setShowPassword] = useState(false);
+>>>>>>> Stashed changes
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +45,7 @@ export function ChangePassword() {
         </div>
       )}
 
+<<<<<<< Updated upstream
       <form className="settings-form" onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Mật khẩu hiện tại</label>
@@ -53,6 +58,25 @@ export function ChangePassword() {
         <div className="form-group">
           <label>Xác nhận mật khẩu mới</label>
           <input className="input" type="password" value={formData.confirm_password} onChange={e => setFormData({...formData, confirm_password: e.target.value})} required minLength={6} />
+=======
+      <form className="settings-form" onSubmit={handleSubmit} style={{ maxWidth: '400px' }}>
+        <div className="form-group">
+          <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+            Mật khẩu hiện tại
+            <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '12px' }}>
+              {showPassword ? 'Ẩn mật khẩu' : 'Xem mật khẩu'}
+            </button>
+          </label>
+          <input className="input" type={showPassword ? 'text' : 'password'} value={formData.current_password} onChange={e => setFormData({...formData, current_password: e.target.value})} required />
+        </div>
+        <div className="form-group">
+          <label>Mật khẩu mới</label>
+          <input className="input" type={showPassword ? 'text' : 'password'} value={formData.new_password} onChange={e => setFormData({...formData, new_password: e.target.value})} required minLength={6} />
+        </div>
+        <div className="form-group">
+          <label>Xác nhận mật khẩu mới</label>
+          <input className="input" type={showPassword ? 'text' : 'password'} value={formData.confirm_password} onChange={e => setFormData({...formData, confirm_password: e.target.value})} required minLength={6} />
+>>>>>>> Stashed changes
         </div>
         <div className="form-actions">
           <button type="submit" className="btn btn-primary" disabled={loading}>
