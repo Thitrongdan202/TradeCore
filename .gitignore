@@ -26,3 +26,20 @@ dist-ssr
 # Env
 .env
 .env.local
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Company business data
+data/*.xlsx
+data/*.xls
+data/*.csv
+
+# Local environment
+backend/.venv/
+.env
+.idea/
+.codex/
+node_modules/
+dist/
