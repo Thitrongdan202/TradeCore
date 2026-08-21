@@ -11,7 +11,7 @@ interface HeaderProps {
 const ROUTE_LABELS: Record<string, string> = {
   '/':                      'Tổng quan',
   '/ban-hang/don-hang':     'Đơn bán hàng',
-  '/ban-hang/bao-gia':      'Báo giá',
+  '/ban-hang/bang-gia':     'Bảng giá / Báo giá',
   '/ban-hang/hoa-don':      'Hóa đơn',
   '/mua-hang/don-hang':     'Đơn mua hàng',
   '/mua-hang/de-nghi':      'Đề nghị mua',

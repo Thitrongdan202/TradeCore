@@ -9,7 +9,7 @@ import uuid
 from datetime import date
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, File, UploadFile
 from sqlalchemy import func, select, and_, or_
 from sqlalchemy.orm import Session, selectinload
 
@@ -34,6 +34,113 @@ from app.schemas.pricing import (
 )
 
 router = APIRouter()
+
+import os
+import shutil
+from app.core.config import get_settings
+
+@router.post("/price-lists/upload", summary="Tải lên và xử lý file Bảng giá Excel")
+def upload_price_list_excel(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("pricing", "create")),
+):
+    settings = get_settings()
+    os.makedirs(settings.tradecore_storage_path, exist_ok=True)
+    file_path = os.path.join(settings.tradecore_storage_path, file.filename)
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    from app.importpipeline.importers.lacasa_pricing import import_lacasa_pricing
+    try:
+        report = import_lacasa_pricing(
+            db=db,
+            file_path=file_path,
+            original_filename=file.filename,
+            created_by_id=current_user.id,
+            dry_run=False
+        )
+        return {"status": "success", "report": report.to_dict()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi khi import file Excel: {str(e)}")
+
+from fastapi.responses import FileResponse
+
+@router.get("/price-lists/{price_list_id}/download-original", summary="Tải file Excel gốc")
+def download_original_excel(
+    price_list_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("pricing", "view")),
+):
+    pl = db.query(PriceList).filter(PriceList.id == price_list_id).first()
+    if not pl or not pl.source_excel_file:
+        raise HTTPException(status_code=404, detail="Không tìm thấy file gốc")
+        
+    settings = get_settings()
+    file_path = os.path.join(settings.tradecore_storage_path, pl.source_excel_file)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File gốc không còn tồn tại trên server")
+        
+    return FileResponse(file_path, filename=pl.source_excel_file)
+
+
+
+@router.get("/price-lists/compare", summary="So sánh 2 bảng giá")
+def compare_price_lists(
+    list_a: uuid.UUID = Query(..., description="ID của bảng giá gốc"),
+    list_b: uuid.UUID = Query(..., description="ID của bảng giá mới"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("pricing", "view")),
+):
+    items_a = db.query(PriceListItem).filter(PriceListItem.price_list_id == list_a).options(selectinload(PriceListItem.product)).all()
+    items_b = db.query(PriceListItem).filter(PriceListItem.price_list_id == list_b).options(selectinload(PriceListItem.product)).all()
+    
+    map_a = {item.product.code: item.price for item in items_a if item.product}
+    map_b = {item.product.code: item.price for item in items_b if item.product}
+    
+    all_codes = set(map_a.keys()).union(set(map_b.keys()))
+    
+    results = []
+    for code in all_codes:
+        price_a = map_a.get(code)
+        price_b = map_b.get(code)
+        
+        diff = 0
+        status = "Không đổi"
+        
+        if price_a is None:
+            status = "Sản phẩm mới"
+            price_a = 0
+            diff = price_b
+        elif price_b is None:
+            status = "Ngừng áp dụng"
+            price_b = 0
+            diff = -price_a
+        else:
+            diff = price_b - price_a
+            if diff > 0:
+                status = "Tăng giá"
+            elif diff < 0:
+                status = "Giảm giá"
+                
+        # Find product name
+        prod = next((i.product for i in items_a if i.product and i.product.code == code), None)
+        if not prod:
+            prod = next((i.product for i in items_b if i.product and i.product.code == code), None)
+            
+        results.append({
+            "product_code": code,
+            "product_name": prod.name if prod else code,
+            "image_url": prod.image_url if prod else None,
+            "price_a": price_a,
+            "price_b": price_b,
+            "diff": diff,
+            "status": status
+        })
+        
+    return {"status": "success", "data": results}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -125,7 +232,7 @@ def get_price_list(
         .options(
             selectinload(PriceList.customer),
             selectinload(PriceList.currency),
-            selectinload(PriceList.items).selectinload(PriceListItem.product),
+            selectinload(PriceList.items).selectinload(PriceListItem.product).selectinload(Product.category),
             selectinload(PriceList.items).selectinload(PriceListItem.uom),
         )
         .where(PriceList.id == price_list_id)
@@ -152,6 +259,12 @@ def get_price_list(
                 notes=item.notes,
                 product_code=item.product.code if item.product else None,
                 product_name=item.product.name if item.product else None,
+                old_code=item.product.old_code if item.product else None,
+                invoice_code=item.product.invoice_code if item.product else None,
+                qr_code=item.product.qr_code if item.product else None,
+                specifications=item.product.specifications if item.product else None,
+                image_url=item.product.image_url if item.product else None,
+                category_name=item.product.category.name if item.product and item.product.category else None,
                 uom_name=item.uom.name if item.uom else None,
                 created_at=item.created_at,
                 updated_at=item.updated_at,

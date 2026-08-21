@@ -33,7 +33,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Bán hàng',
     items: [
       { label: 'Đơn bán hàng', path: '/ban-hang/don-hang', icon: <IconSales size={14} /> },
-      { label: 'Báo giá', path: '/ban-hang/bao-gia', icon: <IconQuote size={14} /> },
+      { label: 'Bảng giá / Báo giá', path: '/ban-hang/bang-gia', icon: <IconQuote size={14} /> },
       { label: 'Hóa đơn', path: '/ban-hang/hoa-don', icon: <IconInvoice size={14} /> },
     ],
   },

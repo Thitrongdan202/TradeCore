@@ -5,6 +5,9 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
+from pathlib import Path
 
 from app.core.config import get_settings
 
@@ -27,6 +30,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ─── Storage ─────────────────────────────────────────────────────────────────
+os.makedirs(settings.tradecore_storage_path, exist_ok=True)
+os.makedirs(os.path.join(settings.tradecore_storage_path, "products"), exist_ok=True)
+app.mount("/api/v1/storage", StaticFiles(directory=settings.tradecore_storage_path), name="storage")
 
 
 # ─── Health check ────────────────────────────────────────────────────────────

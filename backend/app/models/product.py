@@ -93,14 +93,18 @@ class Product(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     # ── Identifiers ──────────────────────────────────────────────────────
     code: Mapped[str] = mapped_column(
         String(80), unique=True, nullable=False, index=True,
-        comment="Stable business code — use as upsert key. Example: HH-2041"
+        comment="Stable business code — use as upsert key. Example: HH-2041 (Mã hàng mới)"
     )
+    old_code: Mapped[Optional[str]] = mapped_column(String(80), nullable=True, index=True, comment="Mã hàng cũ")
+    invoice_code: Mapped[Optional[str]] = mapped_column(String(80), nullable=True, index=True, comment="Mã xuất HĐ")
+    qr_code: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True, comment="Mã QR CODE")
     barcode: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
 
     # ── Names ─────────────────────────────────────────────────────────────
     name: Mapped[str] = mapped_column(String(500), nullable=False, index=True)
     name_en: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    specifications: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="Thông tin sản phẩm chi tiết")
     image_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True, comment="URL of the product image")
 
     # ── Classification ────────────────────────────────────────────────────

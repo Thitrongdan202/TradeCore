@@ -24,6 +24,10 @@ import { AccountLayout } from './pages/Account/AccountLayout';
 import { Profile } from './pages/Account/Profile';
 import { ChangePassword } from './pages/Account/ChangePassword';
 
+import { PriceLists } from './pages/Pricing/PriceLists';
+import { PriceListDetail } from './pages/Pricing/PriceListDetail';
+import { PriceComparison } from './pages/Pricing/PriceComparison';
+
 export function App() {
   return (
     <AuthProvider>
@@ -41,6 +45,9 @@ export function App() {
               <Route path="ban-hang/don-hang" element={<PlaceholderPage />} />
               <Route path="ban-hang/bao-gia"  element={<PlaceholderPage />} />
               <Route path="ban-hang/hoa-don"  element={<PlaceholderPage />} />
+              <Route path="ban-hang/bang-gia" element={<PriceLists />} />
+              <Route path="ban-hang/bang-gia/so-sanh" element={<PriceComparison />} />
+              <Route path="ban-hang/bang-gia/:id" element={<PriceListDetail />} />
 
               {/* Mua hàng */}
               <Route path="mua-hang/don-hang" element={<PlaceholderPage />} />

@@ -320,7 +320,20 @@ pg_isready -h localhost -p 5432
 
 ---
 
-## 13. Cấu trúc dự án
+## 13. Tính năng: Bảng giá / Báo giá (Pricing Module)
+
+Module Bảng giá được thiết kế riêng biệt để tương thích với cấu trúc báo giá của công ty (0908. GIÁ ĐẠI LÝ_LACASA.xlsx).
+
+**Các tính năng nổi bật:**
+- **Tải lên Excel (Upload)**: Xử lý tự động file Excel báo giá.
+- **Tự động trích xuất metadata**: Lấy số báo giá, ngày báo giá, điều kiện áp dụng, thông tin VAT từ 8 dòng đầu tiên.
+- **Tự động trích xuất hình ảnh (Image Extraction)**: Đọc hình ảnh sản phẩm được chèn bên trong file Excel, đối chiếu và lưu vào local storage `/api/v1/storage/products`.
+- **So sánh tự động (Comparison)**: So sánh hai báo giá giữa các kỳ để phát hiện tự động: Tăng giá, Giảm giá, Không đổi, Sản phẩm mới, Ngừng áp dụng.
+- **Tải file gốc**: Cho phép tải về đúng file Excel gốc (`.xlsx`) đã dùng để upload.
+
+---
+
+## 14. Cấu trúc dự án
 
 ```
 tradecore/

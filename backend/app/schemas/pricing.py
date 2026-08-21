@@ -40,7 +40,13 @@ class PriceListItemResponse(PriceListItemBase):
     id: uuid.UUID
     price_list_id: uuid.UUID
     product_code: Optional[str] = None
+    old_code: Optional[str] = None
+    invoice_code: Optional[str] = None
+    qr_code: Optional[str] = None
+    specifications: Optional[str] = None
+    image_url: Optional[str] = None
     product_name: Optional[str] = None
+    category_name: Optional[str] = None
     uom_name: Optional[str] = None
     created_at: datetime
     updated_at: datetime
@@ -52,6 +58,16 @@ class PriceListItemResponse(PriceListItemBase):
 
 class PriceListBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
+    code: Optional[str] = Field(None, max_length=100)
+    status: Optional[str] = Field("Nháp", max_length=50)
+    quotation_number: Optional[str] = Field(None, max_length=100)
+    quotation_date: Optional[str] = Field(None, max_length=100)
+    month: Optional[int] = None
+    quarter: Optional[int] = None
+    year: Optional[int] = None
+    pricing_conditions: Optional[str] = None
+    vat_notes: Optional[str] = None
+    source_excel_file: Optional[str] = None
     currency_id: Optional[uuid.UUID] = None
     customer_id: Optional[uuid.UUID] = Field(
         None, description="NULL for standard general price list, or specific customer ID"
