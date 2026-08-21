@@ -1,706 +1,360 @@
-# React + TypeScript + Vite
+# TradeFlow — Phần mềm Quản lý Thương mại Nội bộ
 
-<<<<<<< Updated upstream
-Hệ thống quản lý bán hàng, mua hàng, kho và xuất nhập khẩu cho doanh nghiệp.
-=======
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
->>>>>>> Stashed changes
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-<<<<<<< Updated upstream
-# 1. Yêu cầu môi trường
-=======
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
->>>>>>> Stashed changes
-
-## Expanding the Oxlint configuration
-
-<<<<<<< Updated upstream
-- Python 3.13
-- Node.js
-- npm
-- Docker Desktop
-- Git
-- PyCharm (khuyến nghị)
-
-Kiểm tra:
-
-```powershell
-python --version
-node --version
-npm --version
-docker --version
-docker compose version
-git --version
-```
-
-Docker Desktop phải đang chạy trước khi khởi động PostgreSQL.
+TradeFlow là hệ thống quản lý nội bộ cho doanh nghiệp thương mại, bao gồm:
+- **Xác thực & RBAC động**: đăng nhập, phân quyền theo vai trò, phân quyền theo tài nguyên/hành động
+- **Quản lý tài khoản & người dùng**: tạo, sửa, phân vai trò, xem mật khẩu (có quyền)
+- **Cài đặt hệ thống**: công ty, kiểm tra nhật ký hoạt động, phiên hỗ trợ
+- **Import dữ liệu**: sản phẩm, khách hàng, tồn kho, bảng giá
 
 ---
 
-# 2. Mở project bằng PyCharm
+## Mục lục
 
-Mở thư mục gốc:
-
-```text
-TradeCore/
-```
-
-Không mở riêng thư mục `backend/` nếu muốn làm việc với cả frontend và backend.
-
-Cấu trúc chính:
-
-```text
-TradeCore/
-├── backend/              # FastAPI backend
-├── src/                  # React + Vite frontend
-├── public/
-├── data/                 # Dữ liệu Excel/CSV nguồn
-├── docs/
-├── docker-compose.yml
-├── package.json
-├── package-lock.json
-├── vite.config.ts
-└── README.md
-```
+1. [Yêu cầu hệ thống](#1-yêu-cầu-hệ-thống)
+2. [Cài đặt môi trường](#2-cài-đặt-môi-trường)
+3. [Khởi động PostgreSQL](#3-khởi-động-postgresql)
+4. [Cấu hình biến môi trường](#4-cấu-hình-biến-môi-trường)
+5. [Khởi động backend (FastAPI)](#5-khởi-động-backend-fastapi)
+6. [Alembic migration](#6-alembic-migration)
+7. [Seed dữ liệu phát triển](#7-seed-dữ-liệu-phát-triển)
+8. [Đăng nhập môi trường phát triển](#8-đăng-nhập-môi-trường-phát-triển)
+9. [Khởi động frontend (React)](#9-khởi-động-frontend-react)
+10. [Kiểm tra (Tests)](#10-kiểm-tra-tests)
+11. [Dừng các service](#11-dừng-các-service)
+12. [Xử lý sự cố xác thực](#12-xử-lý-sự-cố-xác-thực)
+13. [Cấu trúc dự án](#13-cấu-trúc-dự-án)
+14. [Lưu ý bảo mật](#14-lưu-ý-bảo-mật)
 
 ---
 
-# 3. Cài đặt lần đầu
+## 1. Yêu cầu hệ thống
 
-## 3.1. Cài frontend
+| Thành phần | Phiên bản tối thiểu |
+|---|---|
+| Python | 3.11+ |
+| Node.js | 18+ |
+| PostgreSQL | 14+ |
+| npm | 9+ |
 
-Mở Terminal tại thư mục gốc:
+---
 
-```powershell
+## 2. Cài đặt môi trường
+
+### Backend Python
+
+```bash
+cd backend
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# Linux/Mac:
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+### Frontend Node
+
+```bash
+# Từ thư mục gốc dự án:
 npm install
 ```
 
 ---
 
-## 3.2. Tạo Python virtual environment
+## 3. Khởi động PostgreSQL
 
-Vào thư mục backend:
+### Tùy chọn A — Docker (khuyên dùng cho phát triển)
 
-```powershell
+```bash
+docker run -d \
+  --name tradeflow-postgres \
+  -e POSTGRES_USER=tradecore \
+  -e POSTGRES_PASSWORD=tradecore_dev_pw \
+  -e POSTGRES_DB=tradecore \
+  -p 5432:5432 \
+  postgres:16
+```
+
+### Tùy chọn B — PostgreSQL cài trực tiếp
+
+Tạo database và user thủ công:
+
+```sql
+CREATE USER tradecore WITH PASSWORD 'tradecore_dev_pw';
+CREATE DATABASE tradecore OWNER tradecore;
+```
+
+> **Lưu ý**: Password mặc định chỉ dùng cho môi trường phát triển.  
+> Không dùng `tradecore_dev_pw` trong production.
+
+---
+
+## 4. Cấu hình biến môi trường
+
+```bash
 cd backend
+cp .env.example .env
 ```
 
-Tạo môi trường:
+Chỉnh sửa `backend/.env`. Các biến bắt buộc:
 
-```powershell
-python -m venv .venv
-```
+| Biến | Mô tả |
+|---|---|
+| `DATABASE_URL` | URL kết nối PostgreSQL |
+| `JWT_SECRET` | Secret key để ký JWT token |
+| `TRADECORE_PASSWORD_ENCRYPTION_KEY` | Fernet key 32-byte base64 (mã hóa mật khẩu) |
 
----
+### Tạo encryption key mới
 
-## 3.3. Kích hoạt Python virtual environment
-
-PowerShell có thể chặn `Activate.ps1`. Cho phép script trong phiên hiện tại:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-```
-
-Kích hoạt:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-Kiểm tra:
-
-```powershell
-python -c "import sys; print(sys.executable)"
-```
-
-Đường dẫn phải trỏ vào:
-
-```text
-backend\.venv\Scripts\python.exe
-```
-
----
-
-## 3.4. Cài thư viện backend
-
-Trong `backend/`:
-
-```powershell
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-Kiểm tra Alembic:
-
-```powershell
-python -m alembic --version
-```
-
----
-
-# 4. Khởi động PostgreSQL bằng Docker
-
-Mở Docker Desktop và chờ Docker Engine chạy hoàn toàn.
-
-Kiểm tra:
-
-```powershell
-docker info
-```
-
-Từ thư mục gốc TradeCore:
-
-```powershell
-docker compose up -d postgres
-```
-
-Kiểm tra:
-
-```powershell
-docker compose ps
-```
-
-Xem log:
-
-```powershell
-docker compose logs postgres --tail=50
-```
-
-PostgreSQL phải ở trạng thái `Up`.
-
----
-
-# 5. Khởi tạo database
-
-Chỉ thực hiện khi cài lần đầu hoặc khi cần cập nhật database.
-
-Vào backend:
-
-```powershell
+```bash
 cd backend
+.venv\Scripts\python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
 
-Kích hoạt `.venv`:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
-```
-
-Chạy migration:
-
-```powershell
-python -m alembic upgrade head
-```
-
-Nạp dữ liệu nền:
-
-```powershell
-python scripts/seed.py
-```
-
-Không cần chạy `seed.py` ở mỗi lần khởi động.
+> ⚠️ **QUAN TRỌNG**: `TRADECORE_PASSWORD_ENCRYPTION_KEY` KHÔNG được commit vào Git.  
+> Key này được dùng để mã hóa và giải mã tất cả mật khẩu người dùng.  
+> Nếu thay đổi key sau khi đã tạo tài khoản, tất cả mật khẩu cũ sẽ không giải mã được.  
+> Chạy `repair_passwords.py` để re-encrypt trong trường hợp đổi key.
 
 ---
 
-# 6. Chạy Backend
+## 5. Khởi động backend (FastAPI)
 
-Mở một Terminal riêng:
-
-```powershell
+```bash
 cd backend
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload
+.venv\Scripts\uvicorn app.main:app --reload --port 8000
 ```
 
-Backend:
-
-```text
-http://127.0.0.1:8000
-```
-
-Swagger:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-ReDoc:
-
-```text
-http://127.0.0.1:8000/redoc
-```
-
-Giữ Terminal này mở khi phát triển backend.
+Backend chạy tại: http://localhost:8000  
+Swagger UI: http://localhost:8000/docs
 
 ---
 
-# 7. Chạy Frontend
+## 6. Alembic migration
 
-Mở Terminal thứ hai tại thư mục gốc:
-
-```powershell
-npm run dev
-```
-
-Vite thường chạy tại:
-
-```text
-http://localhost:5173
-```
-
-Mở địa chỉ mà Vite hiển thị trong Terminal.
-
-Giữ Terminal này mở khi phát triển frontend.
-
----
-
-# 8. Chạy toàn bộ TradeCore
-
-## Terminal 1 — PostgreSQL
-
-```powershell
-docker compose up -d postgres
-```
-
-## Terminal 2 — Backend
-
-```powershell
+```bash
 cd backend
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload
-```
 
-## Terminal 3 — Frontend
+# Chạy tất cả migration
+.venv\Scripts\alembic upgrade head
 
-```powershell
-npm run dev
-```
+# Xem trạng thái
+.venv\Scripts\alembic current
 
-Địa chỉ:
-
-```text
-Frontend:
-http://localhost:5173
-
-Backend:
-http://127.0.0.1:8000
-
-Swagger:
-http://127.0.0.1:8000/docs
+# Tạo migration mới (sau khi thay đổi model)
+.venv\Scripts\alembic revision --autogenerate -m "mô tả thay đổi"
 ```
 
 ---
 
-# 9. Chạy bằng PyCharm
+## 7. Seed dữ liệu phát triển
 
-## Backend
+```bash
+cd backend
+.venv\Scripts\python seed_admin.py
+```
+
+Script này là idempotent — có thể chạy nhiều lần mà không tạo duplicate.
 
 Tạo:
+- Tất cả permissions theo `RESOURCES` trong `app/core/permissions.py`
+- Vai trò hệ thống `ADMIN` với đầy đủ quyền
+- Các vai trò phát triển: `QUANLY`, `KINHDOANH`, `MUAHANG`, `KHO`, `XNK`
+- Tài khoản `admin` với mật khẩu từ `ADMIN_PASSWORD` env var (hoặc random nếu không có)
+- Các tài khoản test phát triển (chỉ khi `ENVIRONMENT=development`)
 
-**Run → Edit Configurations → + → Python**
+---
 
-Thiết lập:
+## 8. Đăng nhập môi trường phát triển
 
-```text
-Name:
-TradeCore Backend
+> ⚠️ **CHỈ DÙNG CHO MÔI TRƯỜNG PHÁT TRIỂN CỤC BỘ**.  
+> Không dùng các tài khoản này trong staging hoặc production.
 
-Module name:
-uvicorn
+Sau khi chạy `seed_admin.py`, các tài khoản sau có thể đăng nhập:
 
-Parameters:
-app.main:app --reload
+| Username | Vai trò | Mật khẩu dev |
+|---|---|---|
+| `admin` | Quản trị viên (toàn quyền) | Từ `ADMIN_PASSWORD` env var |
+| `quanly01` | Quản lý | `tradecore123` |
+| `kinhdoanh01` | Nhân viên kinh doanh | `tradecore123` |
+| `muahang01` | Nhân viên mua hàng | `tradecore123` |
+| `kho01` | Nhân viên kho | `tradecore123` |
+| `xnk01` | Nhân viên xuất nhập khẩu | `tradecore123` |
 
-Working directory:
-backend
+> **Mật khẩu admin**: Đặt `ADMIN_PASSWORD=<mật_khẩu>` trong `backend/.env` trước khi seed.  
+> Nếu không có, seed script sẽ tự tạo mật khẩu ngẫu nhiên và in ra terminal.
 
-Python interpreter:
-backend/.venv
-```
+### Kiểm tra đăng nhập qua API
 
-Bấm **Run**.
+```bash
+# Login
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -d "username=admin&password=<mật_khẩu>"
 
-## Frontend
-
-Có thể dùng Terminal:
-
-```powershell
-npm run dev
-```
-
-Hoặc tạo NPM Run Configuration với script:
-
-```text
-dev
+# Lấy thông tin user hiện tại
+curl http://localhost:8000/api/v1/auth/me \
+  -H "Authorization: Bearer <access_token>"
 ```
 
 ---
 
-# 10. Kiểm thử
+## 9. Khởi động frontend (React)
 
-## Backend
-
-Trong `backend/`:
-
-```powershell
-python -m pytest -v
+```bash
+# Từ thư mục gốc dự án:
+npm run dev
 ```
 
-## Frontend lint
+Frontend chạy tại: http://localhost:5173
 
-Từ thư mục gốc:
+---
 
-```powershell
+## 10. Kiểm tra (Tests)
+
+### Backend
+
+```bash
+cd backend
+
+# Kiểm tra cú pháp Python
+.venv\Scripts\python -m compileall app
+
+# Chạy toàn bộ test suite
+.venv\Scripts\python -m pytest -v
+
+# Kết quả mong đợi: 67 passed
+```
+
+### Frontend
+
+```bash
+# Lint (kiểm tra code style)
 npm run lint
-```
 
-## Frontend build
-
-```powershell
+# Build production
 npm run build
 ```
 
----
+### Kiểm tra xác thực thực tế (cần backend đang chạy)
 
-# 11. Database migration
-
-Tạo migration:
-
-```powershell
+```bash
 cd backend
-python -m alembic revision --autogenerate -m "describe change"
-```
-
-Áp dụng:
-
-```powershell
-python -m alembic upgrade head
-```
-
-Xem migration hiện tại:
-
-```powershell
-python -m alembic current
+.venv\Scripts\python test_api_login.py
 ```
 
 ---
 
-# 12. Nhập dữ liệu Excel
+## 11. Dừng các service
 
-Dữ liệu doanh nghiệp có thể được nhập thông qua:
+### Dừng backend Uvicorn
 
-```text
-Cài đặt → Nhập dữ liệu
 ```
-
-Nguồn có thể gồm:
-
-- Excel
-- CSV
-- Dữ liệu xuất từ Odoo
-
-Quy trình:
-
-```text
-Chọn loại dữ liệu
-        ↓
-Tải tệp lên
-        ↓
-Kiểm tra dữ liệu
-        ↓
-Dry Run
-        ↓
-Xem lỗi và cảnh báo
-        ↓
-Xác nhận
-        ↓
-Import vào PostgreSQL
-```
-
-Không sửa file Excel gốc.
-
-Không import thật khi chưa kiểm tra dry-run.
-
----
-
-# 13. Bảng giá và hình ảnh
-
-Bảng giá doanh nghiệp có thể chứa:
-
-- Số báo giá
-- Ngày báo giá
-- Thời gian áp dụng
-- Nhóm sản phẩm
-- Mã hàng mới
-- Mã hàng cũ
-- Hình ảnh sản phẩm
-- Thông tin sản phẩm
-- Giá
-- VAT
-- Công thức Excel
-- Dữ liệu tham chiếu từ workbook khác
-
-Hình ảnh sản phẩm được quản lý riêng với dữ liệu sản phẩm.
-
----
-
-# 14. Thoát Backend
-
-Trong Terminal đang chạy Uvicorn:
-
-```text
 Ctrl + C
 ```
 
----
+### Dừng frontend Vite
 
-# 15. Thoát Frontend
-
-Trong Terminal đang chạy Vite:
-
-```text
+```
 Ctrl + C
 ```
 
----
+### Dừng Docker PostgreSQL
 
-# 16. Dừng PostgreSQL
-
-Dừng riêng PostgreSQL nhưng giữ dữ liệu:
-
-```powershell
-docker compose stop postgres
-```
-
-Kiểm tra:
-
-```powershell
-docker compose ps
+```bash
+docker stop tradeflow-postgres
+docker start tradeflow-postgres  # Khởi động lại khi cần
 ```
 
 ---
 
-# 17. Dừng toàn bộ Docker Compose
+## 12. Xử lý sự cố xác thực
 
-```powershell
-docker compose down
-```
+### Không đăng nhập được
 
-Không dùng:
+**Bước 1**: Kiểm tra biến môi trường
 
-```powershell
-docker compose down -v
-```
-
-trừ khi bạn thực sự muốn xóa volume dữ liệu PostgreSQL.
-
----
-
-# 18. Thoát toàn bộ môi trường phát triển
-
-1. Terminal Backend → `Ctrl + C`
-2. Terminal Frontend → `Ctrl + C`
-3. Dừng PostgreSQL:
-
-```powershell
-docker compose stop postgres
-```
-
-Hoặc:
-
-```powershell
-docker compose down
-```
-
-Sau đó có thể đóng PyCharm và Docker Desktop.
-
----
-
-# 19. Khởi động lại lần sau
-
-Không cần tạo lại `.venv` hoặc cài lại npm.
-
-## PostgreSQL
-
-```powershell
-docker compose up -d postgres
-```
-
-## Backend
-
-```powershell
+```bash
 cd backend
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload
+.venv\Scripts\python -c "from app.core.config import get_settings; s = get_settings(); print('Key loaded:', bool(s.tradecore_password_encryption_key))"
 ```
 
-## Frontend
+**Bước 2**: Chẩn đoán tài khoản trong database
 
-Mở Terminal mới:
-
-```powershell
-npm run dev
+```bash
+cd backend
+.venv\Scripts\python diagnose_auth.py
 ```
 
----
+**Bước 3**: Nếu cột `verify=False` — key mã hóa đã thay đổi, chạy:
 
-# 20. Tài khoản và phân quyền
-
-TradeCore hỗ trợ:
-
-- Tài khoản người dùng
-- Vai trò động
-- Phân quyền theo chức năng
-- Đổi mật khẩu
-- Đặt lại mật khẩu
-- Cài đặt công ty
-- Nhật ký hoạt động
-- Hỗ trợ kỹ thuật có kiểm soát
-
-Quản trị viên có thể tạo vai trò và gán quyền cho người dùng.
-
-Quyền được kiểm tra tại backend, không chỉ ẩn menu frontend.
-
----
-
-# 21. File môi trường và Git
-
-Không commit:
-
-```text
-backend/.venv/
-node_modules/
-dist/
-__pycache__/
-*.pyc
-.pytest_cache/
-.env
-.idea/
-.codex/
+```bash
+cd backend
+.venv\Scripts\python repair_passwords.py
 ```
 
-Không commit:
+Script này sẽ re-encrypt tất cả mật khẩu dev (`tradecore123`) dùng key hiện tại mà không xóa dữ liệu.
 
-- Mật khẩu
-- API key
-- JWT secret
-- Database password
-- Token
-- Dữ liệu nhạy cảm
-- File Excel dữ liệu kinh doanh nếu repository không được phép chứa chúng
+### Lỗi "TRADECORE_PASSWORD_ENCRYPTION_KEY is missing"
 
-`.env.example` có thể được commit.
+Đảm bảo `backend/.env` tồn tại và có giá trị hợp lệ cho `TRADECORE_PASSWORD_ENCRYPTION_KEY`.
 
----
+Tạo key mới:
 
-# 22. Kiến trúc
+```bash
+cd backend
+.venv\Scripts\python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
 
-```text
-                    TradeCore
-                        │
-          ┌─────────────┴─────────────┐
-          │                           │
-     React + Vite                 FastAPI
-          │                           │
-          └─────────────┬─────────────┘
-                        │
-                    PostgreSQL
-                        │
-                      Docker
+> ⚠️ Nếu tạo key mới sau khi đã tồn tại dữ liệu, PHẢI chạy `repair_passwords.py` để re-encrypt lại.
+
+### Lỗi kết nối database
+
+Kiểm tra PostgreSQL đang chạy:
+
+```bash
+docker ps | grep postgres
+# hoặc
+pg_isready -h localhost -p 5432
 ```
 
 ---
 
-# 23. Truy cập local
+## 13. Cấu trúc dự án
 
-Frontend:
-
-```text
-http://localhost:5173
 ```
-
-Backend:
-
-```text
-http://127.0.0.1:8000
+tradecore/
+├── backend/
+│   ├── app/
+│   │   ├── api/           # FastAPI routers (auth, users, products, ...)
+│   │   ├── core/          # Config, security, database, permissions
+│   │   ├── models/        # SQLAlchemy ORM models
+│   │   ├── schemas/       # Pydantic schemas
+│   │   └── importpipeline/ # Data import pipeline
+│   ├── alembic/           # Database migrations
+│   ├── tests/             # Pytest test suite
+│   ├── seed_admin.py      # Development seed script
+│   ├── repair_passwords.py # Re-encrypt passwords after key change
+│   ├── diagnose_auth.py   # Authentication diagnostic tool
+│   ├── pytest.ini         # Pytest configuration
+│   ├── .env.example       # Environment variable template
+│   └── requirements.txt
+├── src/                   # React frontend
+│   ├── components/
+│   ├── contexts/          # AuthContext, theme
+│   ├── layouts/           # Sidebar, Header
+│   └── pages/             # Login, Settings, Dashboard, ...
+├── data/                  # Local company data files (NOT tracked in Git)
+└── scripts/               # Utility scripts
 ```
-
-Swagger:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-Giai đoạn phát triển chỉ chạy local.
-
-Khi triển khai trên máy của công ty và cần truy cập từ xa, có thể sử dụng mạng riêng/VPN như Tailscale. Không công khai PostgreSQL `5432` ra Internet.
 
 ---
 
-# 24. Trạng thái dự án
+## 14. Lưu ý bảo mật
 
-TradeCore hiện có:
-
-- React + Vite
-- FastAPI
-- PostgreSQL
-- Docker Compose
-- Alembic
-- Xác thực người dùng
-- Vai trò động
-- Phân quyền theo chức năng
-- Quản lý tài khoản
-- Đổi mật khẩu
-- Đặt lại mật khẩu
-- Cài đặt công ty
-- Nhật ký hoạt động
-- Phiên hỗ trợ kỹ thuật
-- Nhập dữ liệu Excel/CSV
-- Chuẩn bị dữ liệu từ Odoo
-- Kiểm thử tự động
-
-Các nghiệp vụ đang tiếp tục phát triển:
-
-- Sản phẩm
-- Khách hàng
-- Nhà cung cấp
-- Kho hàng
-- Bảng giá
-- Báo giá
-- Bán hàng
-- Mua hàng
-- Nhập khẩu
-- Xuất khẩu
-- Lô hàng
-- Container
-- Báo cáo
-=======
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
->>>>>>> Stashed changes
+- `backend/.env` **KHÔNG được commit** vào Git (được ignore qua `.gitignore`)
+- `TRADECORE_PASSWORD_ENCRYPTION_KEY` chỉ nằm trong `.env` cục bộ
+- `data/` (file Excel công ty) **KHÔNG được commit** vào Git
+- Tài khoản phát triển (`tradecore123`) **KHÔNG** được dùng trong production
+- `seed_admin.py` tạo tài khoản test chỉ khi `ENVIRONMENT=development`
+- JWT secret nên được thay đổi thành key ngẫu nhiên đủ dài (≥32 bytes) trong production

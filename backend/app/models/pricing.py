@@ -57,6 +57,22 @@ class PriceList(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+    # Extended pricing/quotation metadata (added in migration 7c67ea17fba8)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="active",
+                                         comment="active | expired | draft | cancelled")
+    code: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    quotation_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    quotation_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    month: Mapped[Optional[int]] = mapped_column(nullable=True)
+    quarter: Mapped[Optional[int]] = mapped_column(nullable=True)
+    year: Mapped[Optional[int]] = mapped_column(nullable=True)
+    pricing_conditions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    vat_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    source_excel_file: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    created_by_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+
     # Relationships
     currency: Mapped[Optional["Currency"]] = relationship("Currency", back_populates="price_lists")
     customer: Mapped[Optional["Customer"]] = relationship("Customer", back_populates="price_lists")
@@ -65,7 +81,7 @@ class PriceList(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
 
     def __repr__(self) -> str:
-        return f"<PriceList name={self.name!r} customer_id={self.customer_id}>"
+        return f"<PriceList name={self.name!r} status={self.status!r}>"
 
 
 class PriceListItem(Base, UUIDPrimaryKeyMixin, TimestampMixin):

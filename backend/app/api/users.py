@@ -14,11 +14,7 @@ from sqlalchemy import func, select, or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_current_user, get_db, require_permission
-<<<<<<< Updated upstream
-from app.core.security import get_password_hash
-=======
 from app.core.security import get_password_hash, decrypt_password
->>>>>>> Stashed changes
 from app.models.user import Role, User, Permission, RolePermission, UserRole
 from app.schemas.common import MessageResponse, PaginatedResponse
 from app.schemas.user import (
@@ -458,11 +454,7 @@ def admin_reset_password(
     if not user:
         raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
 
-<<<<<<< Updated upstream
-    user.hashed_password = get_password_hash(payload.new_password)
-=======
     user.encrypted_password = get_password_hash(payload.new_password)
->>>>>>> Stashed changes
     db.commit()
     log_activity(db, "admin_password_reset", user_id=current_user.id, entity_id=str(user.id), request=request, details={"target_username": user.username})
     return MessageResponse(message=f"Đã đặt lại mật khẩu cho '{user.username}'")
@@ -491,8 +483,6 @@ def get_user_effective_permissions(
             unique_perms.append(p)
             
     return unique_perms
-<<<<<<< Updated upstream
-=======
 
 
 @router.get("/{user_id}/password", summary="Xem mật khẩu người dùng (dành cho Admin)")
@@ -514,4 +504,3 @@ def view_user_password(
     log_activity(db, "password_viewed", user_id=current_user.id, entity_id=str(user.id), request=request, details={"target_username": user.username})
     
     return {"password": plain_pass}
->>>>>>> Stashed changes

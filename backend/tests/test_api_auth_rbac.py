@@ -1,108 +1,128 @@
+"""
+TradeCore — API Authorization Tests (Dynamic RBAC)
+
+Tests that backend authorization correctly:
+  - Allows authenticated users who have the required permission
+  - Rejects authenticated users who lack the required permission (403)
+  - Rejects unauthenticated requests (401)
+
+Architecture note:
+  require_permission() creates a new closure each call, so dependency_overrides
+  on the returned callable won't work. Instead we:
+    1. Override get_current_user to bypass JWT
+    2. Patch get_user_permissions to control what permissions the mock user has
+"""
+import uuid
 import pytest
+from unittest.mock import patch
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
-from typing import Optional
 
 from app.main import app
 from app.api.deps import get_current_user
-from app.models.user import User, Role
-from app.core.security import RoleType
 
-client = TestClient(app)
 
-class MockRole:
-    def __init__(self, name: str):
-        self.name = name
+def make_mock_user(uid=None):
+    """Create a minimal User-like object for DI mocking."""
+    class _User:
+        id = uid or uuid.UUID("00000000-0000-0000-0000-000000000001")
+        username = "mockuser"
+        email = "mockuser@tradecore.vn"
+        full_name = "Mock User"
+        is_active = True
+        user_roles = []
+        activity_logs = []
+        support_sessions = []
+        password_resets = []
+    return _User()
 
-class MockUser:
-    def __init__(self, role_name: Optional[str] = None, is_active: bool = True):
-        self.id = "mock-uuid"
-        self.username = "mockuser"
-        self.email = "mock@tradecore.vn"
-        self.is_active = is_active
-        if role_name:
-            self.role = MockRole(role_name)
-        else:
-            self.role = None
 
-def override_get_current_user_admin():
-    return MockUser(role_name=RoleType.ADMIN)
+MOCK_USER = make_mock_user()
 
-def override_get_current_user_sales():
-    return MockUser(role_name=RoleType.SALES)
 
-def override_get_current_user_warehouse():
-    return MockUser(role_name=RoleType.WAREHOUSE)
+def dep_mock_user():
+    return MOCK_USER
 
-def override_get_current_user_no_role():
-    return MockUser(role_name=None)
 
-# 1. Test unauthorized access (No token)
-def test_unauthorized_access():
-    app.dependency_overrides = {}
-    response = client.get("/api/v1/users/")
-    assert response.status_code == 401
-    assert "detail" in response.json()
-
-# 2. Test User Endpoint RBAC (Admin only)
-def test_users_endpoint_admin():
-    app.dependency_overrides[get_current_user] = override_get_current_user_admin
-    # We expect a DB error or 200, but NOT 403. 
-    # Since DB is not mocked, it might throw 500 because it tries to access DB in the route.
-    # But FastAPI dependencies run first. If 403 is not raised, it means RBAC passed.
-    try:
-        response = client.get("/api/v1/users/")
-        assert response.status_code != 403
-    except Exception:
-        # DB connection error implies auth passed
-        pass
-
-def test_users_endpoint_sales_rejected():
-    app.dependency_overrides[get_current_user] = override_get_current_user_sales
-    response = client.get("/api/v1/users/")
-    assert response.status_code == 403
-    assert response.json()["detail"] == "Bạn không có quyền thực hiện thao tác này"
-
-def test_users_endpoint_no_role_rejected():
-    app.dependency_overrides[get_current_user] = override_get_current_user_no_role
-    response = client.get("/api/v1/users/")
-    assert response.status_code == 403
-
-# 3. Test Sales Endpoint (Admin & Sales allowed, Warehouse rejected)
-def test_sales_endpoint_sales():
-    app.dependency_overrides[get_current_user] = override_get_current_user_sales
-    try:
-        response = client.get("/api/v1/sales/orders")
-        assert response.status_code != 403
-    except Exception:
-        pass
-
-def test_sales_endpoint_warehouse_rejected():
-    app.dependency_overrides[get_current_user] = override_get_current_user_warehouse
-    response = client.get("/api/v1/sales/orders")
-    assert response.status_code == 403
-
-# 4. Test Products Read-Only (All allowed to read)
-def test_products_endpoint_read_warehouse():
-    app.dependency_overrides[get_current_user] = override_get_current_user_warehouse
-    try:
-        response = client.get("/api/v1/products/")
-        assert response.status_code != 403
-    except Exception:
-        pass
-
-def test_products_endpoint_write_warehouse_rejected():
-    app.dependency_overrides[get_current_user] = override_get_current_user_warehouse
-    response = client.post("/api/v1/products/", json={"name": "Test", "code": "T"})
-    assert response.status_code == 403
-
-def test_products_endpoint_write_admin():
-    app.dependency_overrides[get_current_user] = override_get_current_user_admin
-    try:
-        response = client.post("/api/v1/products/", json={"name": "Test", "code": "T"})
-        assert response.status_code != 403
-    except Exception:
-        pass
-
-# Cleanup overrides
 def teardown_function():
     app.dependency_overrides = {}
+
+
+# ── 1. Unauthenticated ───────────────────────────────────────────────────────
+
+def test_unauthorized_access_no_token():
+    """Accessing any protected endpoint without a token must return 401."""
+    app.dependency_overrides = {}
+    client = TestClient(app, raise_server_exceptions=False)
+    response = client.get("/api/v1/users/")
+    assert response.status_code == 401
+
+
+# ── 2. Users Endpoint RBAC ───────────────────────────────────────────────────
+
+def test_users_endpoint_allowed():
+    """Authenticated user WITH user:view permission → not 401/403."""
+    app.dependency_overrides[get_current_user] = dep_mock_user
+
+    # Grant all permissions to the mock user
+    all_permissions = {("user", "view"), ("user", "create"), ("role", "view")}
+    with patch("app.api.deps.get_user_permissions", return_value=all_permissions):
+        client = TestClient(app, raise_server_exceptions=False)
+        response = client.get("/api/v1/users/")
+        assert response.status_code not in (401, 403)
+
+
+def test_users_endpoint_forbidden():
+    """Authenticated user WITHOUT user:view permission → 403."""
+    app.dependency_overrides[get_current_user] = dep_mock_user
+
+    # Return empty permissions = no access
+    with patch("app.api.deps.get_user_permissions", return_value=set()):
+        client = TestClient(app, raise_server_exceptions=False)
+        response = client.get("/api/v1/users/")
+        assert response.status_code == 403
+
+
+# ── 3. Sales Endpoint RBAC ───────────────────────────────────────────────────
+
+def test_sales_endpoint_forbidden():
+    """User WITHOUT overview:view permission → 403 (sales router requires overview:view)."""
+    app.dependency_overrides[get_current_user] = dep_mock_user
+
+    with patch("app.api.deps.get_user_permissions", return_value=set()):
+        client = TestClient(app, raise_server_exceptions=False)
+        response = client.get("/api/v1/sales/orders")
+        assert response.status_code == 403
+
+
+def test_sales_endpoint_allowed():
+    """User WITH overview:view → not 401/403."""
+    app.dependency_overrides[get_current_user] = dep_mock_user
+
+    with patch("app.api.deps.get_user_permissions", return_value={("overview", "view")}):
+        client = TestClient(app, raise_server_exceptions=False)
+        response = client.get("/api/v1/sales/orders")
+        assert response.status_code not in (401, 403)
+
+
+# ── 4. Products Write RBAC ────────────────────────────────────────────────────
+
+def test_products_write_forbidden():
+    """POST /products without overview:view permission → 403."""
+    app.dependency_overrides[get_current_user] = dep_mock_user
+
+    with patch("app.api.deps.get_user_permissions", return_value=set()):
+        client = TestClient(app, raise_server_exceptions=False)
+        response = client.post("/api/v1/products/", json={"name": "Test", "code": "T"})
+        assert response.status_code == 403
+
+
+def test_products_write_allowed():
+    """POST /products WITH overview:view → not 401/403."""
+    app.dependency_overrides[get_current_user] = dep_mock_user
+
+    all_perms = {("overview", "view")}
+    with patch("app.api.deps.get_user_permissions", return_value=all_perms):
+        client = TestClient(app, raise_server_exceptions=False)
+        response = client.post("/api/v1/products/", json={"name": "Test", "code": "T"})
+        assert response.status_code not in (401, 403)
