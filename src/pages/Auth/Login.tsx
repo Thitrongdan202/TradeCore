@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { api } from '../../utils/api';
+import { api, classifyApiError } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
 import './Login.css';
 
@@ -36,12 +36,8 @@ export function Login() {
       const { access_token } = response.data;
       await login(access_token);
       navigate('/');
-    } catch (err: any) {
-      if (err.response && err.response.data && err.response.data.detail) {
-        setError(err.response.data.detail);
-      } else {
-        setError('Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.');
-      }
+    } catch (err: unknown) {
+      setError(classifyApiError(err));
     } finally {
       setIsLoading(false);
     }
