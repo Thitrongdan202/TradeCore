@@ -1,0 +1,6 @@
+Found 101 images in the sheet.
+Image 0 is anchored at row 67, col 7
+Image 1 is anchored at row 67, col 7
+Image 2 is anchored at row 80, col 7
+Image 3 is anchored at row 81, col 7
+Image 4 is anchored at row 71, col 7
